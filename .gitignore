@@ -1,0 +1,6 @@
+.idea
+**/zones.d/**
+__pycache__
+build
+dist
+monitoring_utils.egg-info
