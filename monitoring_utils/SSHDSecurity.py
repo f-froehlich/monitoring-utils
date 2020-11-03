@@ -52,7 +52,7 @@ class SSHDSecurity:
 
         for arg in self.__config:
             config = arg.split("=")
-            self.check_value(config[0].lower, config[1].split("|"))
+            self.check_value(config[0].lower(), config[1].split("|"))
 
         print("OK")
         sys.exit(0)
