@@ -51,9 +51,8 @@ class SSHDSecurity:
         self.check_value('port', [self.__port])
 
         for arg in self.__config:
-            print(arg)
-            config = config.split("=")
-            self.check_value(config[0], config[1].split("|"))
+            config = arg.split("=")
+            self.check_value(config[0].lower, config[1].split("|"))
 
         print("OK")
         sys.exit(0)
