@@ -5,7 +5,7 @@
 #
 #  Monitoring monitoring-utils are the background magic for my plugins, scripts and more
 #
-#  Copyright (c) 2020 Fabian Fröhlich <mail@confgen.org> https://icinga2.confgen.org
+#  Copyright (c) 2020 Fabian Fröhlich <mail@confgen.org> <https://icinga2.confgen.org>
 #
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -22,6 +22,9 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 #  For all license terms see README.md and LICENSE Files in root directory of this Project.
+#
+#  Checkout this project on github <https://github.com/f-froehlich/monitoring-utils>
+#  and also my other projects <https://github.com/f-froehlich>
 
 
 from monitoring_utils.Core.Executor.WebExecutor import WebExecutor

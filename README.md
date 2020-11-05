@@ -8,6 +8,10 @@ Full License Information see  [https://github.com/f-froehlich/monitoring-utils/b
 
 ***NOTE:*** This is only an utility tool and the background magic of our [https://github.com/f-froehlich/monitoring-utils](monitoring plugins) and [https://github.com/f-froehlich/monitoring-scripts](monitoring scripts).
 
+# Donate
+This project needs donations. Please check out [https://icinga2.confgen.org/Donate](https://icinga2.confgen.org/Donate) for details.
+
+
 # Quick setup
 See our [documentation](https://icinga2.confgen.org) for details.
 
