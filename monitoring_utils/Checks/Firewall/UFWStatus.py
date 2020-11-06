@@ -93,12 +93,12 @@ class UFWStatus(Plugin):
         for running_config in self.__running_config:
             if 'status' == running_config[0]:
                 if self.__status != running_config[1]:
-                    self.__logger.log('Firewall status not match')
+                    self.__logger.info('Firewall status not match')
                     self.__status_builder.critical('Firewall status does not match. Expected '
                                                    + self.__status + ' got ' + running_config[1])
-                    self.__status_builder.__exit()
+                    self.__status_builder.exit()
                 elif 'inactive' == self.__status:
-                    self.__logger.log('Firewall inactive')
+                    self.__logger.info('Firewall inactive')
                     if 'on' == self.__warn_inactive:
                         self.__logger.debug('Send warning because firewall is inactive')
                         self.__status_builder.warning("UFW inactive")
