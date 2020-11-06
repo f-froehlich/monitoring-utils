@@ -26,32 +26,29 @@
 #  Checkout this project on github <https://github.com/f-froehlich/monitoring-utils>
 #  and also my other projects <https://github.com/f-froehlich>
 
+from monitoring_utils.Core.Executor.TelegramExecutor import TelegramExecutor
+from monitoring_utils.Core.Notification.ServiceNotification import ServiceNotification as BaseServiceNotification
 
-from setuptools import setup, find_packages
 
-with open('README.md') as readme_file:
-    README = readme_file.read()
+class ServiceNotification(BaseServiceNotification):
 
-setup_args = dict(
-    name='monitoring_utils',
-    version='1.0.0',
-    description='Utilities for monitoring scripts, plugins and other',
-    long_description_content_type="text/markdown",
-    long_description=README,
-    license='AGPLv3',
-    packages=find_packages(),
-    author='Fabian Fröhlich',
-    author_email='mail@confgen.org',
-    keywords=['icinga', 'icinga2', 'icinga2-plugin', 'monitoring', 'check', 'nagios', 'nagios-plugin', 'nrpe',
-              'healthcheck', 'serverstatus', 'security', 'security-tools'],
-    url='https://github.com/f-froehlich/monitoring-utils',
-    download_url='https://pypi.org/project/monitoring-utils/',
+    def __init__(self):
+        self.__telegram_executor = None
+        BaseServiceNotification.__init__(self, 'Send a service-notification via telegram API')
 
-)
+    def add_args(self):
+        BaseServiceNotification.add_args(self)
+        self.__parser = self.get_parser()
+        self.__logger = self.get_logger()
+        self.__status_builder = self.get_status_builder()
+        self.__telegram_executor = TelegramExecutor(logger=self.__logger, parser=self.__parser,
+                                                    status_builder=self.__status_builder)
+        self.__telegram_executor.add_args()
 
-install_requires = [
-    'python-telegram-bot'
-]
+    def configure(self, args):
+        BaseServiceNotification.configure(self, args)
+        self.__telegram_executor.configure(args)
 
-if __name__ == '__main__':
-    setup(**setup_args, install_requires=install_requires)
+    def run(self):
+        self.__telegram_executor.send(self.get_message())
+        self.__status_builder.success('Send service notification successful')

@@ -25,33 +25,3 @@
 #
 #  Checkout this project on github <https://github.com/f-froehlich/monitoring-utils>
 #  and also my other projects <https://github.com/f-froehlich>
-
-
-from setuptools import setup, find_packages
-
-with open('README.md') as readme_file:
-    README = readme_file.read()
-
-setup_args = dict(
-    name='monitoring_utils',
-    version='1.0.0',
-    description='Utilities for monitoring scripts, plugins and other',
-    long_description_content_type="text/markdown",
-    long_description=README,
-    license='AGPLv3',
-    packages=find_packages(),
-    author='Fabian Fröhlich',
-    author_email='mail@confgen.org',
-    keywords=['icinga', 'icinga2', 'icinga2-plugin', 'monitoring', 'check', 'nagios', 'nagios-plugin', 'nrpe',
-              'healthcheck', 'serverstatus', 'security', 'security-tools'],
-    url='https://github.com/f-froehlich/monitoring-utils',
-    download_url='https://pypi.org/project/monitoring-utils/',
-
-)
-
-install_requires = [
-    'python-telegram-bot'
-]
-
-if __name__ == '__main__':
-    setup(**setup_args, install_requires=install_requires)

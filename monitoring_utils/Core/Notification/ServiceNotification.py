@@ -33,13 +33,13 @@ from monitoring_utils.Core.Notification.Notification import Notification
 class ServiceNotification(Notification):
 
     def __init__(self, description):
-        Notification.__init__(self, description)
-
-        self.add_args()
         self.__servicename = None
         self.__servicedisplayname = None
+        Notification.__init__(self, description)
 
     def add_args(self):
+        Notification.add_args(self)
+        self.__parser = self.get_parser()
         self.__parser.add_argument('-e', '--servicename', dest='servicename', type=str, required=True,
                                    help='Name of service')
         self.__parser.add_argument('-u', '--servicedisplayname', dest='servicedisplayname', type=str, required=True,
@@ -49,3 +49,32 @@ class ServiceNotification(Notification):
         Notification.configure(self, args)
         self.__servicename = args.servicename
         self.__servicedisplayname = args.servicedisplayname
+
+    def get_service_name(self):
+        return self.__servicename
+
+    def get_service_display_name(self):
+        return self.__servicedisplayname
+
+    def get_message(self):
+        self.__logger.info('Create service message')
+        message = """***** {servicedisplayname} is {state} on Host {displayname} *****
+Service:    {servicedisplayname} ({servicename})
+Host:    {displayname} ({hostname})
+When:   {date}
+
+Info:    {output}
+""".format(
+            servicedisplayname=self.get_service_display_name(),
+            servicename=self.get_service_name(),
+            displayname=self.get_display_name(),
+            state=self.get_state(),
+            output=self.get_output(),
+            hostname=self.get_hostname(),
+            date=self.get_date()
+        )
+
+        if self.get_short():
+            return message
+
+        return message + self.get_optional_messagedata()
