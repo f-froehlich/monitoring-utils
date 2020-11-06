@@ -28,7 +28,7 @@
 
 
 from monitoring_utils.Core.Executor.WebExecutor import WebExecutor
-from monitoring_utils.Core.Plugin import Plugin
+from monitoring_utils.Core.Plugin.Plugin import Plugin
 
 
 class PageContent(Plugin):

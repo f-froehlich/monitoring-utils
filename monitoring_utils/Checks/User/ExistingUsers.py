@@ -28,7 +28,7 @@
 
 
 from monitoring_utils.Core.Executor.CLIExecutor import CLIExecutor
-from monitoring_utils.Core.Plugin import Plugin
+from monitoring_utils.Core.Plugin.Plugin import Plugin
 
 
 class ExistingUsers(Plugin):
