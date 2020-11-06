@@ -77,7 +77,7 @@ class Notification:
 
         self.__parser.add_argument('-4', '--host-address', dest='hostaddress', type=str, help='IPv4 address of host')
         self.__parser.add_argument('-6', '--host-address6', dest='hostaddress6', type=str, help='IPv6 address of host')
-        self.__parser.add_argument('-a', '--author', dest='author', type=str, help='Author of notification')
+        self.__parser.add_argument('-b', '--author', dest='author', type=str, help='Author of notification')
         self.__parser.add_argument('-c', '--comment', dest='comment', type=str, help='Comment of notification')
         self.__parser.add_argument('-i', '--url', dest='url', type=str, help='URL of notification')
         self.__parser.add_argument('-f', '--from', dest='notificationfrom', type=str, help='URL of notification')
