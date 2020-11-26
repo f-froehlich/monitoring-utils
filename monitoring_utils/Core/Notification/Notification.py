@@ -80,7 +80,7 @@ class Notification:
         self.__parser.add_argument('-b', '--author', dest='author', type=str, help='Author of notification')
         self.__parser.add_argument('-c', '--comment', dest='comment', type=str, help='Comment of notification')
         self.__parser.add_argument('-i', '--url', dest='url', type=str, help='URL of notification')
-        self.__parser.add_argument('-f', '--from', dest='notificationfrom', type=str, help='URL of notification')
+        self.__parser.add_argument('-f', '--from', dest='notificationfrom', type=str, help='Custom from name')
         self.__parser.add_argument('--short', dest='short', action='store_true', help='Only send a short summary')
 
     def configure(self, args):

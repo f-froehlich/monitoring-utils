@@ -56,30 +56,49 @@ class StatusBuilder:
         logging.debug('Add unknown message: "' + message + '"')
         self.__unknown.append(message)
 
-    def exit(self):
+    def exit(self, all_outputs=False):
 
+        exit_code = None
         if 0 != len(self.__critical):
             for message in self.__critical:
                 print('CRITICAL: ' + message)
-            sys.exit(2)
-        self.__logger.debug('No critical messages found')
+            if not all_outputs:
+                sys.exit(2)
+            else:
+                exit_code = 2
+        else:
+            self.__logger.debug('No critical messages found')
 
         if 0 != len(self.__warning):
             for message in self.__warning:
                 print('WARNING: ' + message)
-            sys.exit(1)
-        self.__logger.debug('No warning messages found')
+            if not all_outputs:
+                sys.exit(1)
+            elif None == exit_code:
+                exit_code = 1
+        else:
+            self.__logger.debug('No warning messages found')
 
         if 0 != len(self.__unknown):
             for message in self.__unknown:
                 print('UNKNOWN: ' + message)
-            sys.exit(3)
-        self.__logger.debug('No unknown messages found')
+            if not all_outputs:
+                sys.exit(3)
+            elif None == exit_code:
+                exit_code = 3
+        else:
+            self.__logger.debug('No unknown messages found')
 
         if 0 != len(self.__success):
             for message in self.__success:
                 print('SUCCESS: ' + message)
-            sys.exit(0)
+            if not all_outputs:
+                sys.exit(0)
+            elif None == exit_code:
+                exit_code = 0
+
+        if None != exit_code:
+            sys.exit(exit_code)
         self.__logger.debug('No success messages found, exit with unknown')
 
         print('UNKNOWN: No status message found')
