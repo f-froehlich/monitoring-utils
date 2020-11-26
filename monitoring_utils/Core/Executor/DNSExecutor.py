@@ -83,7 +83,7 @@ class DNSExecutor:
             dns.rdatatype.RRSIG: 'RRSIG',
             dns.rdatatype.SOA: 'SOA',
         }
-        return types.get(rdtype, rdtype)
+        return types.get(rdtype, str(rdtype))
 
     def resolve_A(self, domain, save_status=True):
         return self.resolve(domain, dns.rdatatype.A, save_status)
@@ -96,6 +96,52 @@ class DNSExecutor:
 
     def resolve_CNAME(self, domain, save_status=True):
         return self.resolve(domain, dns.rdatatype.CNAME, save_status)
+
+    def resolve_TXT(self, domain, save_status=True):
+        return self.resolve(domain, dns.rdatatype.TXT, save_status)
+
+    def resolve_SPF(self, domain, save_status=True):
+        txt = None
+        soa = self.resolve_SOA(domain, False)
+        zone = '.'.join(domain.split('.')[1::])
+        if None == soa:
+            self.__logger.info('No SOA record found for domain "' + domain + '". Fetching SPF from Zone "' + zone
+                               + '" instead')
+            txt = self.resolve_TXT(zone, False)
+        else:
+            self.__logger.info('Found SOA record found for zone "' + domain + '".')
+            txt = self.resolve_TXT(domain, False)
+
+        if None == txt:
+            self.__logger.info('No TXT record found')
+            if save_status:
+                if None == soa:
+                    self.__status_builder.unknown('No SPF record found for zone "' + zone + '"')
+                else:
+                    self.__status_builder.unknown('No SPF record found for domain "' + domain + '"')
+
+            return None
+
+        spf = []
+        # search for SPF record
+        for record in txt.answer:
+            record = record.to_text()
+            self.__logger.debug('Search SPF policy in TXT record "' + record + '".')
+            if 'TXT' in record and '"v=spf1' not in record:
+                continue
+
+            record_array = record.split('"v=spf1')
+            if len(record_array) >= 2:
+                value = record_array[1]
+                value = value.replace('v=spf1', '')
+                value = value.replace('"', '')
+                value = value.strip()
+
+                if value not in spf:
+                    self.__logger.debug('Found SPF policy "' + value + '".')
+                    spf.append(value)
+
+        return spf
 
     def resolve_DNSKEY(self, domain, save_status=True):
         return self.resolve(domain, dns.rdatatype.DNSKEY, save_status)
