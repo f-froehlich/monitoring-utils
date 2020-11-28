@@ -42,7 +42,7 @@ class SPF(Plugin):
         self.__resolver = None
         self.__executor = None
 
-        Plugin.__init__(self, 'Check DNSSEC status')
+        Plugin.__init__(self, 'Check SPF policy')
 
     def add_args(self):
         self.__parser = self.get_parser()
