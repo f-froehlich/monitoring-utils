@@ -42,10 +42,14 @@ class Signals:
 
     def add_args(self):
         self.__parser.add_argument('--timeout', dest='timeout', default=self.__timeout, type=int,
-                                   help='Timeout to exit this script')
+                                   help='Timeout to exit this script. Set to -1 to disable timeout')
 
     def configure(self, args):
         self.__timeout = args.timeout
+        if self.__timeout < 0:
+            self.__logger.debug('Ignoring timeout because it is set to "' + str(self.__timeout) + '"')
+            return
+
         self.__logger.debug('Setting up timeout signal to ' + str(self.__timeout) + ' seconds.')
         signal.alarm(self.__timeout)
 
