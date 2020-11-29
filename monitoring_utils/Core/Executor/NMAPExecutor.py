@@ -37,6 +37,7 @@ class NMAPExecutor:
                  scripts=[]
                  ):
 
+        self.__open_ports = []
         self.__status_builder = status_builder
         self.__logger = logger
         self.__parser = parser
@@ -91,10 +92,10 @@ class NMAPExecutor:
                                        help='Only execute TCP scan')
 
         if self.__pn:
-            self.__parser.add_argument('-no-Pn', dest='nopn', required=False, action='store_true',
+            self.__parser.add_argument('-not-pn', dest='notpn', required=False, action='store_true',
                                        help='Not treat all hosts as online - enable host discovery')
         else:
-            self.__parser.add_argument('-Pn', dest='pn', required=False, action='store_true',
+            self.__parser.add_argument('--pn', dest='pn', required=False, action='store_true',
                                        help='Treat all hosts as online - skip host discovery')
 
         if self.__fast:
@@ -145,6 +146,14 @@ class NMAPExecutor:
             self.__status_builder.unknown('Can only set --only-tcp or --only-udp')
             self.__status_builder.exit()
 
+    def filter_open_ports(self, report):
+        for port_report in report:
+            if port_report['state'] == 'open':
+                self.__open_ports.append(port_report)
+
+    def get_open_ports(self):
+        return self.__open_ports
+
     def scan(self):
 
         if None != self.__top_ports:
@@ -184,7 +193,9 @@ class NMAPExecutor:
         else:
             udp_host_result, udp_runtime, udp_stats = [], [], []
 
-        return tcp_host_result + udp_host_result, tcp_runtime + udp_runtime, tcp_stats + udp_stats
+        result = tcp_host_result + udp_host_result
+        self.filter_open_ports(result)
+        return result, tcp_runtime + udp_runtime, tcp_stats + udp_stats
 
     def parse_report(self, result):
 

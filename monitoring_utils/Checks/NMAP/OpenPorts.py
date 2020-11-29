@@ -66,9 +66,6 @@ class OpenPorts(Plugin):
 
     def check_ports(self):
         report, runtime, stats = self.__executor.scan()
-        print(report)
-        print(runtime)
-        print(stats)
         if None == report:
             return
 
