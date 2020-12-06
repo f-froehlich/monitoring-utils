@@ -57,10 +57,15 @@ class RebootRequired(Plugin):
 
     def run(self):
         reboot_file = Path("/var/run/reboot-required")
+        self.__logger.debug('Check if file "/var/run/reboot-required" exist.')
         if reboot_file.is_file():
+            self.__logger.debug('File "/var/run/reboot-required" exist.')
             if self.__exit_critical:
                 self.__status_builder.critical('Reboot is required.')
             else:
                 self.__status_builder.warning('Reboot is required.')
+            return
+
+        self.__logger.debug('File "/var/run/reboot-required" does not exist.')
 
         self.__status_builder.success('No reboot is required.')
