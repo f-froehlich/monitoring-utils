@@ -25,338 +25,179 @@
 #
 #  Checkout this project on github <https://github.com/f-froehlich/monitoring-utils>
 #  and also my other projects <https://github.com/f-froehlich>
+from nmap_scan.Scripts.SSLEnumCiphers import CipherCompare
 
 
 class SSLEnumCiphers:
 
-    def __init__(self, logger, status_builder):
+    def __init__(self, logger, status_builder, parser):
+        self.__parser = parser
         self.__logger = logger
         self.__status_builder = status_builder
-        self.__parsed_config = {}
         self.__open_ports = []
-
-        self.__ignore_port = []
-        self.__report = None
-
-        self.__allowed_tlsv1_0_ciphers = None
-        self.__allowed_tlsv1_1_ciphers = None
-        self.__allowed_tlsv1_2_ciphers = None
-        self.__allowed_tlsv1_3_ciphers = None
-
-        self.__least_tlsv1_0_strength = None
-        self.__least_tlsv1_1_strength = None
-        self.__least_tlsv1_2_strength = None
-        self.__least_tlsv1_3_strength = None
-
-        self.__least_strength = None
-        self.__least_strength_overall = None
+        self.__config = {}
 
         self.__ignoreciphername = None
-        self.__ignorecipherstrength = None
+        self.__ignoreleastprotocolstrength = None
         self.__ignorestrength = None
 
-    def get_parsed_config(self, port):
-        return self.__parsed_config.get(port, None)
+    def set_parsed_config(self, config):
+        self.__config = config
 
-    def set_report(self, report):
-        self.__report = report
+    def get_config_for_host(self, ip):
+        return self.__config.get(ip, None)
 
-    def set_ignore_port(self, ignore_port):
-        self.__ignore_port = ignore_port
+    def add_args(self):
+        self.__parser.add_argument('--allowed-cipher', dest='allowedciphers', action='append',
+                                   help='Allowed chippers. Format: HOST/PORT/PROTOCOL/NAME[,NAME[,NAME ...]]',
+                                   default=[])
 
-    def set_ignore_cipher_name(self, config):
-        self.__ignoreciphername = config
+        self.__parser.add_argument('--least-protocol-strength', dest='leastprotocolstrength', default=[],
+                                   action='append',
+                                   help='Least strength of PROTOCOL chippers. Format: HOST/PORT/PROTOCOL/STRENGTH')
 
-    def set_ignore_cipher_strength(self, config):
-        self.__ignorecipherstrength = config
+        # self.__parser.add_argument('--least-strength', dest='leaststrength', default=[], action='append',
+        #                            help='Least strength of chippers. Format: HOST/PORT/STRENGTH')
+        #
+        # self.__parser.add_argument('--least-strength-overall', dest='leaststrengthoverall', default='B', type=str,
+        #                            help='Least strength of chippers over all ports.')
 
-    def set_ignore_strength(self, config):
-        self.__ignorestrength = config
+        self.__parser.add_argument('-iCN', '--ignore-cipher-name', dest='ignoreciphername', required=False,
+                                   action='store_true', help='Ignore the cipher name comparison')
+        self.__parser.add_argument('-iLPS', '--ignore-least-protocol-strength', dest='ignoreleastprotocolstrength',
+                                   required=False,
+                                   action='store_true',
+                                   help='Ignore the least cipher strength comparison for protocols')
+        # self.__parser.add_argument('--ignore-strength', dest='ignorestrength', required=False,
+        #                            action='store_true', help='Ignore the strength comparison over all ports')
 
-    def set_least_strength(self, strength):
-        self.__least_strength = strength
+    def configure(self, args):
+        self.parse_allowed_ciphers(args.allowedciphers)
+        self.parse_protocol_strength(args.leastprotocolstrength)
 
-    def set_least_strength_overall(self, strength):
-        self.__least_strength_overall = strength
+        self.__ignoreleastprotocolstrength = args.ignoreleastprotocolstrength
+        self.__ignoreciphername = args.ignoreciphername
 
-    def set_allowed_tlsv1_0_ciphers(self, ciphers):
-        self.__allowed_tlsv1_0_ciphers = ciphers
-
-    def set_least_tlsv1_0_strength(self, strength):
-        self.__least_tlsv1_0_strength = strength
-
-    def set_allowed_tlsv1_1_ciphers(self, ciphers):
-        self.__allowed_tlsv1_1_ciphers = ciphers
-
-    def set_least_tlsv1_1_strength(self, strength):
-        self.__least_tlsv1_1_strength = strength
-
-    def set_allowed_tlsv1_2_ciphers(self, ciphers):
-        self.__allowed_tlsv1_2_ciphers = ciphers
-
-    def set_least_tlsv1_2_strength(self, strength):
-        self.__least_tlsv1_2_strength = strength
-
-    def set_allowed_tlsv1_3_ciphers(self, ciphers):
-        self.__allowed_tlsv1_3_ciphers = ciphers
-
-    def set_least_tlsv1_3_strength(self, strength):
-        self.__least_tlsv1_3_strength = strength
-
-    def parse_config(self):
-        self.__logger.info('Parsing TLSv1.0 config')
-        parsing_error_tls_1_0 = self.parse_cipher_config(self.__allowed_tlsv1_0_ciphers, 'TLSv1.0')
-        parsing_error_strength_1_0 = self.parse_strength_config(self.__least_tlsv1_0_strength, 'TLSv1.0')
-
-        self.__logger.info('Parsing TLSv1.1 config')
-        parsing_error_tls_1_1 = self.parse_cipher_config(self.__allowed_tlsv1_1_ciphers, 'TLSv1.1')
-        parsing_error_strength_1_1 = self.parse_strength_config(self.__least_tlsv1_1_strength, 'TLSv1.1')
-
-        self.__logger.info('Parsing TLSv1.2 config')
-        parsing_error_tls_1_2 = self.parse_cipher_config(self.__allowed_tlsv1_2_ciphers, 'TLSv1.2')
-        parsing_error_strength_1_2 = self.parse_strength_config(self.__least_tlsv1_2_strength, 'TLSv1.2')
-
-        self.__logger.info('Parsing TLSv1.3 config')
-        parsing_error_tls_1_3 = self.parse_cipher_config(self.__allowed_tlsv1_3_ciphers, 'TLSv1.3')
-        parsing_error_strength_1_3 = self.parse_strength_config(self.__least_tlsv1_3_strength, 'TLSv1.3')
-
-        self.__logger.info('Parsing overall config')
-        parsing_error_strength = self.parse_strength_config(self.__least_strength, 'all')
-        parsing_error_strength_all = self.parse_strength_config(['all:' + self.__least_strength_overall], 'all')
-
-        if parsing_error_tls_1_0 \
-                or parsing_error_tls_1_1 \
-                or parsing_error_tls_1_2 \
-                or parsing_error_tls_1_3 \
-                or parsing_error_strength_1_0 \
-                or parsing_error_strength_1_1 \
-                or parsing_error_strength_1_2 \
-                or parsing_error_strength_1_3 \
-                or parsing_error_strength \
-                or parsing_error_strength_all:
+        if self.__ignoreciphername and self.__ignoreleastprotocolstrength and self.__ignorestrength:
+            # todo
+            self.__status_builder.unknown('You set --ignore-cipher-name, --ignore-cipher-strength and --ignore-strength'
+                                          ' so no check can be executed.')
             self.__status_builder.exit()
 
-    def parse_cipher_config(self, config, name):
-        parsing_error = False
-        for port_config in config:
-            self.__logger.debug('Parsing cipher config "' + port_config + '"')
-            port_config_array = port_config.split(':')
-            if 2 != len(port_config_array):
-                self.__logger.info('Invalid config "' + port_config + '" detected. Expected format: '
-                                                                      'PORT:NAME[,NAME[,NAME ...]]')
-                self.__status_builder.unknown('Invalid config "' + port_config + '" detected. Expected format: '
-                                                                                 'PORT:NAME[,NAME[,NAME ...]]')
-                parsing_error = True
-                continue
+    def execute(self, port, script, config):
+        print(config)
+        self.check_cipher_names(port, script, config)
+        self.check_cipher_strength(port, script, config)
 
-            port = port_config_array[0]
-            ciphers = port_config_array[1].split(',')
+    def parse_allowed_ciphers(self, allowedciphers):
+        for config in allowedciphers:
+            self.__logger.debug('Parsing config "{config}"'.format(config=config))
+            config_array = config.split('/')
+            if 4 != len(config_array):
+                self.__status_builder.unknown('Invalid config "{config}" detected. Expected format: '
+                                              '"HOST/PORT/PROTOCOL/NAME[,NAME[,NAME ...]]"'.format(config=config))
 
-            existing_config = self.__parsed_config.get(port, self.get_default_config())
+            host_config = self.__config.get(config_array[0], {})
+            port_config = host_config.get(int(config_array[1]), {})
+            protocol_config = port_config.get(config_array[2].lower(), {})
+            protocol_cipher_config = protocol_config.get('cipher', [])
+            for cipher in config_array[3].split(','):
+                if cipher not in protocol_config:
+                    protocol_cipher_config.append(cipher)
+            protocol_config['cipher'] = protocol_cipher_config
+            port_config[config_array[2].lower()] = protocol_config
+            host_config[int(config_array[1])] = port_config
+            self.__config[config_array[0]] = host_config
 
-            for cipher in ciphers:
-                if '' != cipher and cipher not in existing_config[name]['ciphers']:
-                    self.__logger.debug('Add cipher "' + cipher + '" to "' + name + '" of port "' + port + '"')
-                    existing_config[name]['ciphers'].append(cipher)
+    def parse_protocol_strength(self, leastprotocolstrength):
+        for config in leastprotocolstrength:
+            self.__logger.debug('Parsing config "{config}"'.format(config=config))
+            config_array = config.split('/')
+            if 4 != len(config_array):
+                self.__status_builder.unknown('Invalid config "{config}" detected. Expected format: '
+                                              '"HOST/PORT/PROTOCOL/STRENGTH"'.format(config=config))
 
-            self.__parsed_config[port] = existing_config
+            host_config = self.__config.get(config_array[0], {})
+            port_config = host_config.get(int(config_array[1]), {})
+            protocol_config = port_config.get(config_array[2].lower(), {})
+            protocol_strength_config = protocol_config.get('strength', None)
+            if None != protocol_strength_config:
+                if CipherCompare.a_lower_b(config_array[3], protocol_strength_config):
+                    protocol_strength_config = config_array[3]
+            else:
+                protocol_strength_config = config_array[3]
 
-        return parsing_error
+            protocol_config['strength'] = protocol_strength_config
+            port_config[config_array[2].lower()] = protocol_config
+            host_config[int(config_array[1])] = port_config
+            self.__config[config_array[0]] = host_config
 
-    def get_default_config(self):
-        return {
-            'TLSv1.0': {'ciphers': [], 'strength': None},
-            'TLSv1.1': {'ciphers': [], 'strength': None},
-            'TLSv1.2': {'ciphers': [], 'strength': None},
-            'TLSv1.3': {'ciphers': [], 'strength': None},
-            'all': {'strength': None},
-        }
-
-    def map_strength(self, strength):
-        self.__logger.debug('Map strength "' + strength + '"')
-        all_strength = {
-            'A': 1,
-            'B': 2,
-            'C': 3,
-            'D': 4,
-            'E': 5,
-            'F': 6,
-        }
-
-        mapped_strength = all_strength.get(strength.upper(), None)
-        if None == mapped_strength:
-            self.__logger.debug('Invalid strength detected.')
-            self.__status_builder.unknown('Invalid strength "' + strength + '" detected. Must be A-F')
-            return False, None
-
-        return True, mapped_strength
-
-    def reverse_map_strength(self, strength):
-        self.__logger.debug('Reverse map strength "' + str(strength) + '"')
-        all_strength = {
-            1: 'A',
-            2: 'B',
-            3: 'C',
-            4: 'D',
-            5: 'E',
-            6: 'F',
-        }
-
-        mapped_strength = all_strength.get(strength, None)
-        if None == mapped_strength:
-            self.__logger.debug('Invalid strength detected.')
-            self.__status_builder.unknown('Invalid strength "' + str(strength) + '" detected. Must be A-F')
-            return False, None
-
-        return True, mapped_strength
-
-    def parse_strength_config(self, config, name):
-        parsing_error = False
-        for port_config in config:
-            self.__logger.debug('Parsing strength config "' + port_config + '"')
-            port_config_array = port_config.split(':')
-            if 2 != len(port_config_array):
-                self.__logger.info('Invalid config "' + port_config + '" detected. Expected format: '
-                                                                      'PORT:STRENGTH')
-                self.__status_builder.unknown('Invalid config "' + port_config + '" detected. Expected format: '
-                                                                                 'PORT:STRENGTH')
-                parsing_error = True
-                continue
-
-            port = port_config_array[0]
-            strength_status, strength = self.map_strength(port_config_array[1])
-            if not strength_status:
-                parsing_error = True
-                self.__logger.info('Invalid config "' + port_config + '" detected. Expected format: '
-                                                                      'PORT:STRENGTH')
-                self.__status_builder.unknown('Invalid config "' + port_config + '" detected. Expected format: '
-                                                                                 'PORT:STRENGTH')
-                continue
-
-            existing_config = self.__parsed_config.get(port, self.get_default_config())
-            existing_strength = existing_config[name]['strength']
-            if None == existing_strength or strength < existing_strength:
-                self.__logger.debug('Setting strength to "' + str(strength) + '"')
-                existing_config[name]['strength'] = strength
-
-            self.__parsed_config[port] = existing_config
-
-        return parsing_error
-
-    def run(self, current, expected, port):
-
-        least_strength = current['data']['least strength']
-        self.check_least_strength(least_strength, port)
-        for protocol in ['TLSv1.0', 'TLSv1.1', 'TLSv1.2', 'TLSv1.3']:
-            self.__logger.debug('Compare protocol "' + protocol + '" of port "' + port + '".')
-            existing_config = current['data'].get(protocol, {'ciphers': {'children': []}})
-            expected_config = expected.get(protocol, None)
-
-            self.check_ciphers(
-                expected_config['ciphers'],
-                existing_config['ciphers']['children'],
-                protocol,
-                port
-            )
-            self.check_cipher_strength(
-                expected_config['strength'],
-                existing_config['ciphers']['children'],
-                protocol,
-                port
-            )
-
-    def check_ciphers(self, expected_ciphers, existing_ciphers, protocol, port):
+    def check_cipher_names(self, port, script, config):
 
         if self.__ignoreciphername:
             return
 
-        self.__logger.info('Compare ciphers of protocol "' + protocol + '" of port "' + port + '"')
-
-        checked_ciphers = []
-        for existing_cipher in existing_ciphers:
-            self.__logger.debug('Check if existing cipher "' + existing_cipher['name'] + '" is expected in protocol "'
-                                + protocol + '" of port "' + port + '"')
-            if existing_cipher['name'] not in expected_ciphers:
-                self.__logger.debug('Cipher "' + existing_cipher['name'] + '" was not expected in protocol "' +
-                                    protocol + '" of port "' + port + '".')
-                self.__status_builder.critical('Cipher "' + existing_cipher['name'] + '" was not expected in protocol "'
-                                               + protocol + '" of port "' + port + '".')
+        protocols = script.get_protocols()
+        for protocol in protocols:
+            protocol_config = config.get(protocol, None)
+            if None == protocol_config:
+                self.__status_builder.critical(
+                    'Protocol version "{protocol}" of port "{port}" was not expected.'
+                        .format(protocol=protocol, port=port.get_port())
+                )
                 continue
-            checked_ciphers.append(existing_cipher['name'])
+            allowed_ciphers = protocol_config.get('cipher', [])
+            existing_ciphers = []
+            for current_cipher in protocols[protocol].get_ciphers():
+                existing_ciphers.append(current_cipher.get_name())
+                if current_cipher.get_name() not in allowed_ciphers:
+                    self.__status_builder.critical(
+                        'Cipher "{cipher}" was not expected in protocol "{protocol}" of port "{port}".'
+                            .format(cipher=current_cipher.get_name(), protocol=protocol, port=port.get_port())
+                    )
 
-        for expected_cipher in expected_ciphers:
-            self.__logger.debug('Check if expected cipher "' + expected_cipher + '" is configured in protocol "' +
-                                protocol + '" of port "' + port + '"')
-            if expected_cipher not in checked_ciphers:
-                self.__logger.debug('Cipher "' + expected_cipher + '" was expected but not found in protocol "' +
-                                    protocol + '" of port "' + port + '".')
-                self.__status_builder.warning('Cipher "' + expected_cipher +
-                                              '" was expected but not found in protocol "' + protocol
-                                              + '" of port "' + port + '".')
+            for allowed_cipher in allowed_ciphers:
+                if allowed_cipher not in existing_ciphers:
+                    self.__status_builder.critical(
+                        'Cipher "{cipher}" was expected in protocol "{protocol}" of port "{port}" but was not found.'
+                            .format(cipher=allowed_cipher, protocol=protocol, port=port.get_port())
+                    )
 
-    def check_cipher_strength(self, expected_strength, existing_ciphers, protocol, port):
+        for allowed_protocol in config:
+            existing_protocol = protocols.get(allowed_protocol, None)
+            if None == existing_protocol:
+                self.__status_builder.warning(
+                    'Protocol version "{protocol}" of port "{port}" was expected but was not found.'
+                        .format(protocol=allowed_protocol, port=port.get_port())
+                )
 
-        if self.__ignorecipherstrength:
+    def check_cipher_strength(self, port, script, config):
+        if self.__ignoreleastprotocolstrength:
             return
 
-        if None == expected_strength:
-            self.__logger.info('Can\'t check cipher strength of protocol "' + protocol
-                               + '" because no expected strength is set of port "' + port + '".')
-            if 0 != len(existing_ciphers):
-                self.__status_builder.unknown('Can\'t check cipher strength of protocol "' + protocol
-                                              + '" because no expected strength is set of port "' + port + '".')
-            return
-
-        self.__logger.info('Compare ciphers strength of protocol "' + protocol + '" of port "' + port + '"')
-        status, expected_strength_name = self.reverse_map_strength(expected_strength)
-
-        for existing_cipher in existing_ciphers:
-            status, existing_strength = self.map_strength(existing_cipher['strength'])
-            if not status:
-                self.__logger.debug('Unknown cipher "' + existing_cipher['strength'] + '" strength detected of port "'
-                                    + port + '"')
-                self.__status_builder.unknown('Unknown cipher "' + existing_cipher['strength']
-                                              + '" strength detected of port "' + port + '"')
+        protocols = script.get_protocols()
+        for protocol in protocols:
+            protocol_config = config.get(protocol, None)
+            if None == protocol_config:
+                self.__status_builder.critical(
+                    'Strength of protocol version "{protocol}" of port "{port}" was not expected.'
+                        .format(protocol=protocol, port=port.get_port())
+                )
                 continue
+            allowed_strength = protocol_config.get('strength', None)
 
-            self.__logger.debug('Check if existing cipher strength "' + existing_cipher['strength']
-                                + '" is lower or equal to "' + expected_strength_name + '" of cipher "'
-                                + existing_cipher['name'] + '" of port "' + port + '"')
+            if not CipherCompare.a_lower_equals_b(protocols[protocol].get_least_strength(), allowed_strength):
+                self.__status_builder.critical(
+                    'Least cipher strength of protocol version "{protocol}" of port "{port}" does not match. '
+                    'Expected: "{expected}", got: "{got}"'
+                        .format(protocol=protocol, port=port.get_port(), expected=allowed_strength,
+                                got=protocols[protocol].get_least_strength())
+                )
 
-            if existing_strength > expected_strength:
-                self.__logger.debug('Cipher strength "' + existing_cipher['strength'] + '" is not lower or equal to "'
-                                    + expected_strength_name + '" of cipher "' + existing_cipher['name']
-                                    + '" of port "' + port + '"')
-                self.__status_builder.critical('Cipher strength "' + existing_cipher['strength']
-                                               + '" is not lower or equal to "' + expected_strength_name
-                                               + '" of cipher "' + existing_cipher['name'] + '" of port "' + port + '"')
-
-    def check_least_strength(self, least_strength, port):
-
-        if self.__ignorestrength:
-            return
-
-        if None == self.__least_strength_overall:
-            self.__logger.info('You have to set --least-strength-overall or --ignore-strength of port "' + port + '"')
-            self.__status_builder.unknown('You have to set --least-strength-overall or --ignore-strength of port "'
-                                          + port + '"')
-            return
-
-        expected_status, expected_strength = self.map_strength(self.__least_strength_overall)
-        if not expected_status:
-            self.__logger.info('You have to set --least-strength-overall to A-F of port "' + port + '"')
-            self.__status_builder.unknown('You have to set --least-strength-overall to A-F of port "' + port + '"')
-            return
-
-        self.__logger.info('Compare ciphers strength "' + least_strength + '" is lower or equal "' +
-                           self.__least_strength_overall + '" of port "' + port + '"')
-
-        status, existing_strength = self.map_strength(least_strength)
-
-        if existing_strength > expected_strength:
-            self.__logger.info(
-                'Ciphers strength "' + least_strength + '" is not lower or equal "' + self.__least_strength_overall +
-                '" of port "' + port + '"')
-            self.__status_builder.critical(
-                'Ciphers strength "' + least_strength + '" is not lower or equal "' + self.__least_strength_overall +
-                '" of port "' + port + '"')
+        for allowed_protocol in config:
+            existing_protocol = protocols.get(allowed_protocol, None)
+            if None == existing_protocol:
+                self.__status_builder.critical(
+                    'Strength of protocol version "{protocol}" of port "{port}" was expected but was not found.'
+                        .format(protocol=allowed_protocol, port=port.get_port())
+                )

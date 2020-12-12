@@ -37,59 +37,64 @@ class NmapScriptExecutor:
     def add_script(self, script_name, script):
         self.__scripts[script_name] = script
 
-    def execute(self, open_ports, ignore_port):
-        self.__logger.info('Checking reports')
+    def execute(self, report, ignore_port):
+        self.__logger.info('Checking report')
 
-        executed_scripts = {}
-        not_executed_scripts = {}
+        for script_name in self.__scripts:
+            self.__logger.info('Checking Execute script "{script_name}"'.format(script_name=script_name))
+            host_port_maps = report.get_hosts_with_script(script_name)
+            for host_port_map in host_port_maps:
+                host_port_map['ips'] = []
+                for address in host_port_map['host'].get_addresses():
+                    if address.is_ip():
+                        host_port_map['ips'].append(address.get_addr())
+                        for port in host_port_map['ports']:
+                            if port.get_port() in ignore_port.get(address.get_addr(), []):
+                                host_port_map['ports'].remove(port)
+                                self.__logger.debug('Ignoring port "{port}" with executed script "{script_name}"'
+                                                    .format(port=port.get_port(), script_name=script_name))
 
-        for port_report in open_ports:
-            self.__logger.debug('Check ciphers port report "' + str(port_report) + '"')
-            port = port_report['portid']
+                if 0 == len(host_port_map['ports']):
+                    self.__logger.debug(
+                        'Ignoring Host with ips "{ips}" because no port with executed script "{script_name}"'
+                            .format(ips='", "'.join(host_port_map['ips']), script_name=script_name)
+                    )
+                    host_port_maps.remove(host_port_map)
 
-            if port in ignore_port:
-                self.__logger.info('Found port config for port "' + port + '" but it is also in excluded ports.')
-                self.__logger.debug('Ignoring port "' + port + '"')
-                continue
+                ports_executed = []
+                for ip in host_port_map['ips']:
+                    executor_host_configs = self.__scripts[script_name].get_config_for_host(ip)
+                    if None == executor_host_configs:
+                        self.__logger.debug('No config for ip "{ip}" in script "{script_name}" set'
+                                            .format(ip=ip, script_name=script_name)
+                                            )
+                        continue
 
-            self.__logger.info('Checking configuration of port "' + port + '"')
+                    for executor_host_config_port in executor_host_configs:
+                        port_config = executor_host_configs[executor_host_config_port]
+                        executed = False
+                        for port in host_port_map['ports']:
+                            if executor_host_config_port == port.get_port():
+                                self.__logger.info(
+                                    'Execute script "{script_name}" on Port "{port}" from host wit ip "{ip}"'
+                                        .format(ip=ip, script_name=script_name, port=port.get_port())
+                                )
+                                self.__scripts[script_name].execute(port, port.get_script(script_name), port_config)
+                                ports_executed.append(port)
+                                executed = True
+                                break
+                        if not executed:
+                            self.__status_builder.unknown(
+                                'Script "{script_name}" has a configuration for Port "{port}" at host wit ip "{ip}" '
+                                'but the script was not executed on this port.'
+                                    .format(ip=ip, script_name=script_name, port=executor_host_config_port)
+                            )
 
-            scripts = port_report.get('scripts', None)
-            if None == scripts:
-                self.__logger.debug('No Script seams not to be executed, can\'t proceed')
-                self.__status_builder.unknown('No script seams not to be executed, can\'t proceed')
-                self.__status_builder.exit()
-
-            executed = executed_scripts.get(port, [])
-            for script in scripts:
-                script_runner = self.__scripts.get(script['name'], None)
-
-                if script_runner == None:
-                    self.__logger.debug('Script "' + script['name'] + '" was executed but no script runner is set.')
-                    continue
-
-                expected_report = script_runner.get_parsed_config(port)
-                if None == expected_report:
-                    self.__logger.info('Port "' + port + '" is open but no configuration is set. Exclude it '
-                                                         'with --ignore-port or setup a configuration')
-                    self.__status_builder.warning('Port "' + port + '" is open but no configuration is set. Exclude it '
-                                                                    'with --ignore-port or setup a configuration')
-                    self.__logger.debug('Ignoring port "' + port + '"')
-                    continue
-
-                self.__logger.info('Execute script "' + script['name'] + '".')
-                script_runner.run(script, expected_report, port)
-                executed.append(script['name'])
-                self.__logger.info('Script "' + script['name'] + '" executed.')
-
-            not_executed = not_executed_scripts.get(port, [])
-            for script in self.__scripts:
-                if script not in executed_scripts:
-                    not_executed.append(script)
-                    self.__logger.info('Script "' + script + '" was not executed because it was not found in '
-                                                             'scan report.')
-
-            executed_scripts[port] = executed
-            not_executed_scripts[port] = not_executed
-
-        return executed_scripts, not_executed_scripts
+                for port in host_port_map['ports']:
+                    if port not in ports_executed:
+                        self.__status_builder.critical(
+                            'Script "{script_name}" has no configuration for Port "{port}" at host wit ips "{ip}" but '
+                            'the script was executed on this port. Either setup a configuration or ignore this port.'
+                                .format(ip='", "'.join(host_port_map['ips']), script_name=script_name,
+                                        port=port.get_port())
+                        )

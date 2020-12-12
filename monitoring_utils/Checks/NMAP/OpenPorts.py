@@ -29,6 +29,7 @@
 
 from monitoring_utils.Core.Executor.NMAPExecutor import NMAPExecutor
 from monitoring_utils.Core.Plugin.Plugin import Plugin
+from nmap_scan.NmapArgs import NmapArgs
 
 
 class OpenPorts(Plugin):
@@ -41,7 +42,9 @@ class OpenPorts(Plugin):
 
         self.__expected = None
         self.__host = None
-        self.__allowed_ports = []
+        self.__nmapArgs = NmapArgs()
+        self.__allowed_ports = {}
+        self.__config_for_proto = {'tcp': False, 'udp': False}
 
         Plugin.__init__(self, 'Check DNSSEC status')
 
@@ -49,15 +52,28 @@ class OpenPorts(Plugin):
         self.__parser = self.get_parser()
         self.__logger = self.get_logger()
         self.__status_builder = self.get_status_builder()
-        self.__executor = NMAPExecutor(self.__logger, self.__parser, self.__status_builder)
+        self.__executor = NMAPExecutor(self.__logger, self.__parser, self.__status_builder, self.__nmapArgs,
+                                       scan_tcp=True, scan_udp=True)
         self.__executor.add_args()
+        self.__nmapArgs.add_cli_args(self.__parser)
 
         self.__parser.add_argument('-a', '--allowed-port', dest='allowedports', action='append',
-                                   help='Allowed open ports. Format: PORT/udp | PORT/tcp', default=[])
+                                   help='Allowed open ports. Format: HOST/PORT/udp | HOST/PORT/tcp', default=[])
 
     def configure(self, args):
         self.__executor.configure(args)
-        self.__allowed_ports = args.allowedports
+        self.__nmapArgs.parse_args(args)
+        for config in args.allowedports:
+            self.__logger.debug('Parsing config "{config}"'.format(config=config))
+            config_array = config.split('/')
+            if len(config_array) != 3 or config_array[2] not in ['udp', 'tcp']:
+                self.__status_builder.unknown('Invalid config "{config}" detected'.format(config=config))
+                continue
+
+            new_config = self.__allowed_ports.get(config[0], {'tcp': [], 'udp': []})
+            new_config[config_array[2]].append(int(config_array[1]))
+            self.__allowed_ports[config_array[0]] = new_config
+            self.__config_for_proto[config_array[2]] = True
 
     def run(self):
 
@@ -65,18 +81,53 @@ class OpenPorts(Plugin):
         self.__status_builder.success('All checks passed')
 
     def check_ports(self):
-        report, runtime, stats = self.__executor.scan()
-        if None == report:
-            return
+        tcp_report, udp_report = self.__executor.scan()
 
-        open_ports = []
-        for port_report in report:
-            if port_report['state'] == 'open':
-                port_config = port_report['portid'] + '/' + port_report['protocol']
-                open_ports.append(port_config)
-                if port_config not in self.__allowed_ports:
-                    self.__status_builder.critical('Port "' + port_config + "' is open but should be closed")
+        if None != tcp_report:
+            self.check_report(tcp_report, 'tcp')
+        elif self.__config_for_proto['udp']:
+            self.__status_builder.unknown(
+                'No TCP scan executed but TCP ports configured, pass --scan-tcp to execute it.')
 
-        for port_config in self.__allowed_ports:
-            if port_config not in open_ports:
-                self.__status_builder.warning('Port "' + port_config + "' is closed but should be open")
+        if None != udp_report:
+            self.check_report(udp_report, 'udp')
+        elif self.__config_for_proto['udp']:
+            self.__status_builder.unknown(
+                'No UDP scan executed but UDP ports configured, pass --scan-udp to execute it.')
+
+        if None == tcp_report and None == udp_report:
+            self.__status_builder.unknown('No scan executed, pass --scan-tcp and / or --scan-udp')
+
+    def check_report(self, report, proto):
+        used_ips = []
+
+        for host in report.get_hosts():
+            allowed_ports = []
+            ips = []
+            for address in host.get_addresses():
+                if address.is_ip():
+                    ips.append(address.get_addr())
+                    allowed_ports += self.__allowed_ports.get(address.get_addr(), {'tcp': [], 'udp': []})[proto]
+            used_ips += ips
+
+            open_ports = []
+            for port in host.get_open_ports():
+                if port.get_port() not in allowed_ports:
+                    self.__status_builder.critical(
+                        'Port "{port}/{proto}" is open on host with ips "{ip}" but should be closed'
+                            .format(port=port.get_port(), ip='", " '.join(ips), proto=proto))
+                open_ports.append(port.get_port())
+
+            for port in allowed_ports:
+                if port not in open_ports:
+                    self.__status_builder.warning(
+                        'Port "{port}/{proto}" is closed but should be open on host with ips "{ip}"'
+                            .format(port=port, ip='", " '.join(ips), proto=proto)
+                    )
+
+        for ip in self.__allowed_ports:
+            if ip not in used_ips and 0 != len(self.__allowed_ports[ip][proto]):
+                self.__status_builder.warning(
+                    'No Report for host with ip "{ip}" and proto "{proto}" found'
+                        .format(ip=ip, proto=proto)
+                )
