@@ -40,8 +40,8 @@ class Ciphers(Plugin):
         self.__parser = None
         self.__executor = None
         self.__cipher_script = None
-        self.__ignore_port = {}
         self.__nmapArgs = NmapArgs(scripts=['ssl-enum-ciphers'])
+        self.__nmap_script_executor = None
 
         Plugin.__init__(self, 'Check Ciphers')
 
@@ -56,13 +56,16 @@ class Ciphers(Plugin):
                                        self.__nmapArgs, scan_tcp=True)
         self.__executor.add_args()
 
-        self.__parser.add_argument('--ignore-port', dest='ignoreport', default=[], action='append',
-                                   help='Ports to ignore. Format: HOST/PORT')
+        self.__nmap_script_executor = NmapScriptExecutor(status_builder=self.__status_builder, logger=self.__logger,
+                                                         parser=self.__parser)
+        self.__nmap_script_executor.add_args()
 
     def configure(self, args):
         self.__executor.configure(args)
         self.__nmapArgs.configure(args)
         self.__cipher_script.configure(args)
+        self.__nmap_script_executor.configure(args)
+        self.__nmap_script_executor.add_script('ssl-enum-ciphers', self.__cipher_script)
 
     def run(self):
         tcp_report, udp_report = self.__executor.scan()
@@ -70,8 +73,6 @@ class Ciphers(Plugin):
             self.__status_builder.unknown('No TCP scan was executed, pass --scan-tcp to proceed')
             return
 
-        nmap_script_executor = NmapScriptExecutor(status_builder=self.__status_builder, logger=self.__logger)
-        nmap_script_executor.add_script('ssl-enum-ciphers', self.__cipher_script)
-        nmap_script_executor.execute(tcp_report, self.__ignore_port)
+        self.__nmap_script_executor.execute(tcp_report)
 
         self.__status_builder.success('All checks passed')

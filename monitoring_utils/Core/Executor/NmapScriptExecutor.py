@@ -29,15 +29,36 @@
 
 class NmapScriptExecutor:
 
-    def __init__(self, logger, status_builder):
+    def __init__(self, logger, status_builder, parser):
+        self.__parser = parser
         self.__logger = logger
         self.__status_builder = status_builder
         self.__scripts = {}
+        self.__ignore_port = {}
 
     def add_script(self, script_name, script):
         self.__scripts[script_name] = script
 
-    def execute(self, report, ignore_port):
+    def configure(self, args):
+        self.parse_ignored_ports(args.ignoreport)
+
+    def add_args(self):
+        self.__parser.add_argument('--ignore-port', dest='ignoreport', default=[], action='append',
+                                   help='Ports to ignore. Format: HOST/PORT')
+
+    def parse_ignored_ports(self, configs):
+        for config in configs:
+            self.__logger.debug('Parsing config "{config}"'.format(config=config))
+            config_array = config.split('/')
+            if 2 != len(config_array):
+                self.__status_builder.unknown('Invalid config "{config}" detected. Expected format: '
+                                              '"HOST/PORT"'.format(config=config))
+
+            host_config = self.__ignore_port.get(config_array[0], [])
+            host_config.append(int(config_array[1]))
+            self.__ignore_port[config_array[0]] = host_config
+
+    def execute(self, report):
         self.__logger.info('Checking report')
 
         for script_name in self.__scripts:
@@ -49,7 +70,7 @@ class NmapScriptExecutor:
                     if address.is_ip():
                         host_port_map['ips'].append(address.get_addr())
                         for port in host_port_map['ports']:
-                            if port.get_port() in ignore_port.get(address.get_addr(), []):
+                            if port.get_port() in self.__ignore_port.get(address.get_addr(), []):
                                 host_port_map['ports'].remove(port)
                                 self.__logger.debug('Ignoring port "{port}" with executed script "{script_name}"'
                                                     .format(port=port.get_port(), script_name=script_name))
