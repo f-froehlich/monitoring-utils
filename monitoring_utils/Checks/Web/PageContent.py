@@ -68,7 +68,6 @@ class PageContent(Plugin):
     def parse_page_content(self, content):
         self.__logger.info('Check critical content')
         for e in self.__critical_content:
-            print(self.__critical_content)
             self.__logger.debug('Check if "' + e + '" exists in response')
             if e in content:
                 self.__logger.debug('Critical content "' + e + '" exists in response')
