@@ -34,19 +34,22 @@ with open('README.md') as readme_file:
 
 with open('CHANGELOG.md') as changelog_file:
     CHANGELOG = changelog_file.read()
+with open('CONTRIBUTORS.md') as changelog_file:
+    CONTRIBUTORS = changelog_file.read()
 
 additional_files = [
     'README.md',
     'CHANGELOG.md',
+    'CONTRIBUTORS.md',
     'LICENSE',
 ]
 
 setup_args = dict(
     name='monitoring_utils',
-    version='2.0.0-5',
+    version='2.1.0',
     description='Utilities for monitoring scripts, plugins and other',
     long_description_content_type="text/markdown",
-    long_description=README + '\n\n\n' + CHANGELOG,
+    long_description=README + '\n\n\n' + CONTRIBUTORS + '\n\n\n' + CHANGELOG,
     license='AGPLv3',
     packages=find_packages(),
     author='Fabian Fröhlich',
@@ -55,7 +58,7 @@ setup_args = dict(
               'healthcheck', 'serverstatus', 'security', 'security-tools'],
     url='https://github.com/f-froehlich/monitoring-utils',
     download_url='https://pypi.org/project/monitoring-utils/',
-    data_files=[('monitoring_utils_doc', additional_files)]
+    package_data={'monitoring_utils': additional_files}
 
 )
 

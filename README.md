@@ -4,9 +4,9 @@ Monitoring utils are the background magic for my plugins, scripts and more
 
 Copyright (c) 2020 Fabian Fröhlich <mail@confgen.org> [https://icinga2.confgen.org](https://icinga2.confgen.org)
 
-Full License Information see  [https://github.com/f-froehlich/monitoring-utils/blob/master/LICENSE](LICENSE) file in root directory of this source code and License section of this File.
+Full License Information see  [LICENSE](https://github.com/f-froehlich/monitoring-utils/blob/master/LICENSE) file in root directory of this source code and License section of this File.
 
-***NOTE:*** This is only an utility tool and the background magic of our [https://github.com/f-froehlich/monitoring-utils](monitoring plugins) and [https://github.com/f-froehlich/monitoring-scripts](monitoring scripts).
+***NOTE:*** This is only an utility tool and the background magic of our [monitoring plugins](https://github.com/f-froehlich/monitoring-utils) and [monitoring scripts](https://github.com/f-froehlich/monitoring-scripts).
 
 # Donate
 This project needs donations. Please check out [https://icinga2.confgen.org/Donate](https://icinga2.confgen.org/Donate) for details.
@@ -24,9 +24,9 @@ See our [documentation](https://icinga2.confgen.org) for details.
 # License
 This section contains the additional terms of the AGPLv3 license agreement, a copy of the AGPLv3 is included in the [LICENSE](https://github.com/f-froehlich/monitoring-utils/blob/master/LICENSE) file.
 
-1. Adaptation of the [https://github.com/f-froehlich/monitoring-utils/blob/master/REDME.md](README.md) is prohibited. The file must also be included with each copy without any modification. 
+1. Adaptation of the [README.md](https://github.com/f-froehlich/monitoring-utils/blob/master/REDME.md) is prohibited. The file must also be included with each copy without any modification. 
 
-2. Adjustments of any kind must be listed in the attached [https://github.com/f-froehlich/monitoring-utils/blob/master/CHANGELOG.md](CHANGELOG.md) file. It is sufficient to name the change and the reason for the change here and to give appropriate references to the processing in the source code at the appropriate place.
+2. Adjustments of any kind must be listed in the attached [CHANGELOG.md](https://github.com/f-froehlich/monitoring-utils/blob/master/CHANGELOG.md) file. It is sufficient to name the change and the reason for the change here and to give appropriate references to the processing in the source code at the appropriate place.
 
 3. All edited copies must be made available on [github](https://github.com). You have to fork the original repository or use a fork from the original repository.
 
