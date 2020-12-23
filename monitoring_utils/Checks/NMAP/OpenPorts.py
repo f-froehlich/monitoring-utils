@@ -56,7 +56,7 @@ class OpenPorts(Plugin):
         self.__executor = NMAPExecutor(self.__logger, self.__parser, self.__status_builder, self.__nmapArgs,
                                        scan_tcp=True, scan_udp=True)
         self.__executor.add_args()
-        self.__nmapArgs.add_cli_args(self.__parser)
+        self.__nmapArgs.add_args(self.__parser)
 
         self.__parser.add_argument('-a', '--allowed-port', dest='allowedports', action='append',
                                    help='Allowed open ports. Format: HOST/PORT/udp | HOST/PORT/tcp '
@@ -70,7 +70,7 @@ class OpenPorts(Plugin):
 
     def configure(self, args):
         self.__executor.configure(args)
-        self.__nmapArgs.parse_args(args)
+        self.__nmapArgs.configure(args)
         self.__single_host = args.singlehost
 
         if self.__single_host:
