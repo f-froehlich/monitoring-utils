@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8
 
-from argparse import ArgumentError
-
 #  Monitoring monitoring-utils
 #
 #  Monitoring monitoring-utils are the background magic for my plugins, scripts and more
@@ -51,13 +49,6 @@ class SSLEnumCiphers:
         return self.__config.get(ip, None)
 
     def add_args(self):
-
-        try:
-            self.__parser.add_argument('--single-host', dest='singlehost', action='store_true',
-                                       help='Only test a single host. If set you don\'t have to add "HOST/" on all other '
-                                            'parameters')
-        except ArgumentError:
-            pass
 
         self.__parser.add_argument('--allowed-cipher', dest='allowedciphers', action='append',
                                    help='Allowed chippers. Format: HOST/PORT/PROTOCOL/NAME[,NAME[,NAME ...]] '

@@ -25,6 +25,7 @@
 #
 #  Checkout this project on github <https://github.com/f-froehlich/monitoring-utils>
 #  and also my other projects <https://github.com/f-froehlich>
+from argparse import ArgumentError
 
 
 class NmapScriptExecutor:
@@ -35,16 +36,39 @@ class NmapScriptExecutor:
         self.__status_builder = status_builder
         self.__scripts = {}
         self.__ignore_port = {}
+        self.__single_host = False
 
     def add_script(self, script_name, script):
         self.__scripts[script_name] = script
 
     def configure(self, args):
-        self.parse_ignored_ports(args.ignoreport)
+        self.__single_host = args.singlehost
+
+        if self.__single_host:
+            if len(args.hosts) != 1:
+                self.__status_builder.unknown('You set --single-host but you don\'t set exactly once --host. Can\'t '
+                                              'proceed with this configuration.')
+                self.__status_builder.exit()
+
+            host = args.hosts[0]
+            ignoreport = []
+
+            for a in args.ignoreport:
+                ignoreport.append(host + '/' + a)
+            self.parse_ignored_ports(ignoreport)
+        else:
+            self.parse_ignored_ports(args.ignoreport)
 
     def add_args(self):
         self.__parser.add_argument('--ignore-port', dest='ignoreport', default=[], action='append',
-                                   help='Ports to ignore. Format: HOST/PORT')
+                                   help='Ports to ignore. Format: HOST/PORT or PORT if --single-host is set')
+
+        try:
+            self.__parser.add_argument('--single-host', dest='singlehost', action='store_true',
+                                       help='Only test a single host. If set you don\'t have to add "HOST/" on all other '
+                                            'parameters')
+        except ArgumentError:
+            pass
 
     def parse_ignored_ports(self, configs):
         for config in configs:
