@@ -25,7 +25,7 @@
 #
 #  Checkout this project on github <https://github.com/f-froehlich/monitoring-utils>
 #  and also my other projects <https://github.com/f-froehlich>
-
+from argparse import ArgumentError
 
 from monitoring_utils.Core.Executor.NMAPExecutor import NMAPExecutor
 from monitoring_utils.Core.Plugin.Plugin import Plugin
@@ -40,6 +40,7 @@ class OpenPorts(Plugin):
         self.__parser = None
         self.__executor = None
 
+        self.__single_host = False
         self.__expected = None
         self.__host = None
         self.__nmapArgs = NmapArgs()
@@ -58,13 +59,33 @@ class OpenPorts(Plugin):
         self.__nmapArgs.add_cli_args(self.__parser)
 
         self.__parser.add_argument('-a', '--allowed-port', dest='allowedports', action='append',
-                                   help='Allowed open ports. Format: HOST/PORT/udp | HOST/PORT/tcp', default=[])
+                                   help='Allowed open ports. Format: HOST/PORT/udp | HOST/PORT/tcp '
+                                        'or PORT/udp | PORT/tcp if --single-host is set', default=[])
+        try:
+            self.__parser.add_argument('--single-host', dest='singlehost', action='store_true',
+                                       help='Only test a single host. If set you don\'t have to add "HOST/" on all other '
+                                            'parameters')
+        except ArgumentError:
+            pass
 
     def configure(self, args):
         self.__executor.configure(args)
         self.__nmapArgs.parse_args(args)
+        self.__single_host = args.singlehost
+
+        if self.__single_host:
+            if len(args.hosts) != 1:
+                self.__status_builder.unknown('You set --single-host but you don\'t set exactly once --host. Can\'t '
+                                              'proceed with this configuration.')
+                self.__status_builder.exit()
+
         for config in args.allowedports:
             self.__logger.debug('Parsing config "{config}"'.format(config=config))
+
+            if self.__single_host:
+                host = args.hosts[0]
+                config = host + '/' + config
+
             config_array = config.split('/')
             if len(config_array) != 3 or config_array[2] not in ['udp', 'tcp']:
                 self.__status_builder.unknown('Invalid config "{config}" detected'.format(config=config))

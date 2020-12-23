@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8
 
+from argparse import ArgumentError
+
 #  Monitoring monitoring-utils
 #
 #  Monitoring monitoring-utils are the background magic for my plugins, scripts and more
@@ -36,6 +38,7 @@ class SSLEnumCiphers:
         self.__status_builder = status_builder
         self.__open_ports = []
         self.__config = {}
+        self.__single_host = False
 
         self.__ignoreciphername = None
         self.__ignoreprotocolstrength = None
@@ -48,16 +51,27 @@ class SSLEnumCiphers:
         return self.__config.get(ip, None)
 
     def add_args(self):
+
+        try:
+            self.__parser.add_argument('--single-host', dest='singlehost', action='store_true',
+                                       help='Only test a single host. If set you don\'t have to add "HOST/" on all other '
+                                            'parameters')
+        except ArgumentError:
+            pass
+
         self.__parser.add_argument('--allowed-cipher', dest='allowedciphers', action='append',
-                                   help='Allowed chippers. Format: HOST/PORT/PROTOCOL/NAME[,NAME[,NAME ...]]',
+                                   help='Allowed chippers. Format: HOST/PORT/PROTOCOL/NAME[,NAME[,NAME ...]] '
+                                        'or PORT/PROTOCOL/NAME[,NAME[,NAME ...]] if "--single-host" is set.',
                                    default=[])
 
         self.__parser.add_argument('--least-protocol-strength', dest='leastprotocolstrength', default=[],
                                    action='append',
-                                   help='Least strength of PROTOCOL chippers. Format: HOST/PORT/PROTOCOL/STRENGTH')
+                                   help='Least strength of PROTOCOL chippers. Format: HOST/PORT/PROTOCOL/STRENGTH'
+                                        'or PORT/PROTOCOL/STRENGTH if "--single-host" is set.')
 
         self.__parser.add_argument('--least-port-strength', dest='leastportstrength', default=[], action='append',
-                                   help='Least strength of chippers. Format: HOST/PORT/STRENGTH')
+                                   help='Least strength of chippers. Format: HOST/PORT/STRENGTH'
+                                        'or PORT/STRENGTH if "--single-host" is set.')
 
         # self.__parser.add_argument('--least-strength-overall', dest='leaststrengthoverall', default='B', type=str,
         #                            help='Least strength of chippers over all ports.')
@@ -72,18 +86,45 @@ class SSLEnumCiphers:
                                    action='store_true', help='Ignore the strength comparison for ports')
 
     def configure(self, args):
-        self.parse_allowed_ciphers(args.allowedciphers)
-        self.parse_protocol_strength(args.leastprotocolstrength)
-        self.parse_port_strength(args.leastportstrength)
 
         self.__ignoreprotocolstrength = args.ignoreprotocolstrength
         self.__ignoreciphername = args.ignoreciphername
         self.__ignoreportstrength = args.ignoreportstrength
+        self.__single_host = args.singlehost
 
         if self.__ignoreciphername and self.__ignoreprotocolstrength and self.__ignoreportstrength:
             self.__status_builder.unknown('You set --ignore-cipher-name, --ignore-cipher-strength and '
                                           '--ignore-port-strength so no check can be executed.')
             self.__status_builder.exit()
+
+        if self.__single_host:
+            if len(args.hosts) != 1:
+                self.__status_builder.unknown('You set --single-host but you don\'t set exactly once --host. Can\'t '
+                                              'proceed with this configuration.')
+                self.__status_builder.exit()
+
+            host = args.hosts[0]
+            allowedciphers = []
+            leastprotocolstrength = []
+            leastportstrength = []
+
+            for a in args.allowedciphers:
+                allowedciphers.append(host + '/' + a)
+
+            for a in args.leastprotocolstrength:
+                leastprotocolstrength.append(host + '/' + a)
+
+            for a in args.leastportstrength:
+                leastportstrength.append(host + '/' + a)
+
+            self.parse_allowed_ciphers(allowedciphers)
+            self.parse_protocol_strength(leastprotocolstrength)
+            self.parse_port_strength(leastportstrength)
+
+        else:
+            self.parse_allowed_ciphers(args.allowedciphers)
+            self.parse_protocol_strength(args.leastprotocolstrength)
+            self.parse_port_strength(args.leastportstrength)
 
     def execute(self, port, script, config):
         self.check_cipher_names(port, script, config)
@@ -96,7 +137,9 @@ class SSLEnumCiphers:
             config_array = config.split('/')
             if 4 != len(config_array):
                 self.__status_builder.unknown('Invalid config "{config}" detected. Expected format: '
-                                              '"HOST/PORT/PROTOCOL/NAME[,NAME[,NAME ...]]"'.format(config=config))
+                                              '"HOST/PORT/PROTOCOL/NAME[,NAME[,NAME ...]]" '
+                                              'or "PORT/PROTOCOL/NAME[,NAME[,NAME ...]]" if "--single-host" is set.'.format(
+                    config=config))
 
             host_config = self.__config.get(config_array[0], {})
             port_config = host_config.get(int(config_array[1]), {})
@@ -118,7 +161,9 @@ class SSLEnumCiphers:
             config_array = config.split('/')
             if 4 != len(config_array):
                 self.__status_builder.unknown('Invalid config "{config}" detected. Expected format: '
-                                              '"HOST/PORT/PROTOCOL/STRENGTH"'.format(config=config))
+                                              '"HOST/PORT/PROTOCOL/STRENGTH"'
+                                              'or "PORT/PROTOCOL/STRENGTH" if "--single-host" is set'.format(
+                    config=config))
 
             host_config = self.__config.get(config_array[0], {})
             port_config = host_config.get(int(config_array[1]), {})
@@ -144,7 +189,8 @@ class SSLEnumCiphers:
             config_array = config.split('/')
             if 3 != len(config_array):
                 self.__status_builder.unknown('Invalid config "{config}" detected. Expected format: '
-                                              '"HOST/PORT/STRENGTH"'.format(config=config))
+                                              '"HOST/PORT/STRENGTH"'
+                                              'or "PORT/STRENGTH" if "--single-host" is set'.format(config=config))
 
             host_config = self.__config.get(config_array[0], {})
             port_config = host_config.get(int(config_array[1]), {})
