@@ -48,7 +48,7 @@ class NmapScriptExecutor:
             if len(args.hosts) != 1:
                 self.__status_builder.unknown('You set --single-host but you don\'t set exactly once --host. Can\'t '
                                               'proceed with this configuration.')
-                self.__status_builder.exit()
+                self.__status_builder.exit(True)
 
             host = args.hosts[0]
             ignoreport = []

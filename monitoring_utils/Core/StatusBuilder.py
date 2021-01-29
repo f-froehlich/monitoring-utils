@@ -76,7 +76,7 @@ class StatusBuilder:
         else:
             sys.exit(status_code)
 
-    def exit(self, all_outputs=False):
+    def exit(self, all_outputs=True):
 
         exit_code = None
         if 0 != len(self.__critical):
@@ -109,7 +109,7 @@ class StatusBuilder:
         else:
             self.__logger.debug('No unknown messages found')
 
-        if 0 != len(self.__success):
+        if 0 != len(self.__success) and None == exit_code:
             for message in self.__success:
                 print('SUCCESS: ' + message)
             if not all_outputs:

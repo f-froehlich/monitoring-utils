@@ -86,13 +86,13 @@ class SSLEnumCiphers:
         if self.__ignoreciphername and self.__ignoreprotocolstrength and self.__ignoreportstrength:
             self.__status_builder.unknown('You set --ignore-cipher-name, --ignore-cipher-strength and '
                                           '--ignore-port-strength so no check can be executed.')
-            self.__status_builder.exit()
+            self.__status_builder.exit(True)
 
         if self.__single_host:
             if len(args.hosts) != 1:
                 self.__status_builder.unknown('You set --single-host but you don\'t set exactly once --host. Can\'t '
                                               'proceed with this configuration.')
-                self.__status_builder.exit()
+                self.__status_builder.exit(True)
 
             host = args.hosts[0]
             allowedciphers = []
@@ -236,7 +236,7 @@ class SSLEnumCiphers:
                             .format(cipher=allowed_cipher, protocol=protocol, port=port.get_port())
                     )
 
-        for allowed_protocol in config:
+        for allowed_protocol in config['protocol']:
             existing_protocol = protocols.get(allowed_protocol, None)
             if None == existing_protocol:
                 self.__status_builder.warning(
@@ -266,15 +266,21 @@ class SSLEnumCiphers:
                 continue
             allowed_strength = port_config.get('strength', None)
 
-            if not CipherCompare.a_lower_equals_b(protocols[protocol].get_least_strength(), allowed_strength):
-                self.__status_builder.critical(
-                    'Least cipher strength of protocol version "{protocol}" of port "{port}" does not match. '
-                    'Expected: "{expected}", got: "{got}"'
-                        .format(protocol=protocol, port=port.get_port(), expected=allowed_strength,
-                                got=protocols[protocol].get_least_strength())
+            try:
+                if not CipherCompare.a_lower_equals_b(protocols[protocol].get_least_strength(), allowed_strength):
+                    self.__status_builder.critical(
+                        'Least cipher strength of protocol version "{protocol}" of port "{port}" does not match. '
+                        'Expected: "{expected}", got: "{got}"'
+                            .format(protocol=protocol, port=port.get_port(), expected=allowed_strength,
+                                    got=protocols[protocol].get_least_strength())
+                    )
+            except Exception:
+                self.__status_builder.unknown(
+                    'Least cipher strength of protocol version "{protocol}" of port "{port}" not set'
+                        .format(protocol=protocol, port=port.get_port())
                 )
 
-        for allowed_protocol in config:
+        for allowed_protocol in config['protocol']:
             existing_protocol = protocols.get(allowed_protocol, None)
             if None == existing_protocol:
                 self.__status_builder.critical(

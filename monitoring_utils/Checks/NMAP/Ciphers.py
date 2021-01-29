@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8
 
+from nmap_scan.NmapArgs import NmapArgs
+
 #  Monitoring monitoring-utils
 #
 #  Monitoring monitoring-utils are the background magic for my plugins, scripts and more
@@ -29,7 +31,6 @@ from monitoring_utils.Checks.NMAP.Scripts.SSLEnumCiphers import SSLEnumCiphers
 from monitoring_utils.Core.Executor.NMAPExecutor import NMAPExecutor
 from monitoring_utils.Core.Executor.NmapScriptExecutor import NmapScriptExecutor
 from monitoring_utils.Core.Plugin.Plugin import Plugin
-from nmap_scan.NmapArgs import NmapArgs
 
 
 class Ciphers(Plugin):
@@ -76,3 +77,4 @@ class Ciphers(Plugin):
         self.__nmap_script_executor.execute(tcp_report)
 
         self.__status_builder.success('All checks passed')
+        self.__status_builder.exit(True)
