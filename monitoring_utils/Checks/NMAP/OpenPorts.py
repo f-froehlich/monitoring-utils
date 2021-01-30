@@ -27,9 +27,10 @@
 #  and also my other projects <https://github.com/f-froehlich>
 from argparse import ArgumentError
 
+from nmap_scan.NmapArgs import NmapArgs
+
 from monitoring_utils.Core.Executor.NMAPExecutor import NMAPExecutor
 from monitoring_utils.Core.Plugin.Plugin import Plugin
-from nmap_scan.NmapArgs import NmapArgs
 
 
 class OpenPorts(Plugin):
@@ -91,7 +92,7 @@ class OpenPorts(Plugin):
                 self.__status_builder.unknown('Invalid config "{config}" detected'.format(config=config))
                 continue
 
-            new_config = self.__allowed_ports.get(config[0], {'tcp': [], 'udp': []})
+            new_config = self.__allowed_ports.get(config_array[0], {'tcp': [], 'udp': []})
             new_config[config_array[2]].append(int(config_array[1]))
             self.__allowed_ports[config_array[0]] = new_config
             self.__config_for_proto[config_array[2]] = True
@@ -133,7 +134,7 @@ class OpenPorts(Plugin):
 
             open_ports = []
             for port in host.get_open_ports():
-                if port.get_port() not in allowed_ports:
+                if port.get_port() not in allowed_ports and port.is_open() and not port.is_filtered():
                     self.__status_builder.critical(
                         'Port "{port}/{proto}" is open on host with ips "{ip}" but should be closed'
                             .format(port=port.get_port(), ip='", " '.join(ips), proto=proto))
