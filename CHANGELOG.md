@@ -32,3 +32,7 @@ Changelog
     * check_dnssec_status
     * check_reboot_required
     * check_spf
+
+# 2.1.0
+* Checks added:
+    * DS18B20
