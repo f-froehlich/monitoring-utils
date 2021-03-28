@@ -44,19 +44,19 @@ class StatusBuilder:
         self.__unknown = []
 
     def success(self, message):
-        logging.debug('Add success message: "' + message + '"')
+        logging.debug('Add success message: "' + str(message) + '"')
         self.__success.append(message)
 
     def warning(self, message):
-        logging.debug('Add warning message: "' + message + '"')
+        logging.debug('Add warning message: "' + str(message) + '"')
         self.__warning.append(message)
 
     def critical(self, message):
-        logging.debug('Add critical message: "' + message + '"')
+        logging.debug('Add critical message: "' + str(message) + '"')
         self.__critical.append(message)
 
     def unknown(self, message):
-        logging.debug('Add unknown message: "' + message + '"')
+        logging.debug('Add unknown message: "' + str(message) + '"')
         self.__unknown.append(message)
 
     def __exit(self, status_code):
@@ -81,7 +81,7 @@ class StatusBuilder:
         exit_code = None
         if 0 != len(self.__critical):
             for message in self.__critical:
-                print('CRITICAL: ' + message)
+                print('CRITICAL: ' + str(message))
             if not all_outputs:
                 self.__exit(2)
             else:
@@ -91,7 +91,7 @@ class StatusBuilder:
 
         if 0 != len(self.__warning):
             for message in self.__warning:
-                print('WARNING: ' + message)
+                print('WARNING: ' + str(message))
             if not all_outputs:
                 self.__exit(1)
             elif None == exit_code:
@@ -101,7 +101,7 @@ class StatusBuilder:
 
         if 0 != len(self.__unknown):
             for message in self.__unknown:
-                print('UNKNOWN: ' + message)
+                print('UNKNOWN: ' + str(message))
             if not all_outputs:
                 self.__exit(3)
             elif None == exit_code:
@@ -109,9 +109,9 @@ class StatusBuilder:
         else:
             self.__logger.debug('No unknown messages found')
 
-        if 0 != len(self.__success) and None == exit_code:
+        if 0 != len(self.__success) and None == exit_code or all_outputs:
             for message in self.__success:
-                print('SUCCESS: ' + message)
+                print('SUCCESS: ' + str(message))
             if not all_outputs:
                 self.__exit(0)
             elif None == exit_code:

@@ -40,7 +40,7 @@ class CLIExecutor:
 
     def run(self):
 
-        command = ', '.join(self.__command_array)
+        command = ' '.join(self.__command_array)
         self.__logger.debug('Run command "' + command + '" on host.')
 
         out = subprocess.Popen(self.__command_array,
