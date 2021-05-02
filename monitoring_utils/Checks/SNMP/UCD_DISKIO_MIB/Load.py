@@ -144,20 +144,29 @@ class Load(Plugin):
             data = status_data[status_data_id]
             prefix = '' if None is not self.__disk else f"{data['device'].replace(' ', '_')}."
 
-            output = Output(
-                f"Disk load \"{data['device']}\"",
-                [
-                    Perfdata(f'{prefix}load1', data['load1'], warning=self.__warning[0], critical=self.__critical[0]),
-                    Perfdata(f'{prefix}load5', data['load5'], warning=self.__warning[1], critical=self.__critical[1]),
-                    Perfdata(f'{prefix}load15', data['load15'], warning=self.__warning[2], critical=self.__critical[2]),
-                    Perfdata(f'{prefix}numberReads', data['numberReads'], unit='c'),
-                    Perfdata(f'{prefix}numberWrites', data['numberWrites'], unit='c'),
-                    Perfdata(f'{prefix}reads', data['reads'], unit='c'),
-                    Perfdata(f'{prefix}writes', data['writes'], unit='c'),
-                    Perfdata(f'{prefix}reads64', data['reads64'], unit='c'),
-                    Perfdata(f'{prefix}writes64', data['writes64'], unit='c'),
+            perfdata = [
+                Perfdata(f'{prefix}numberReads', data['numberReads'], unit='c'),
+                Perfdata(f'{prefix}numberWrites', data['numberWrites'], unit='c'),
+                Perfdata(f'{prefix}reads', data['reads'], unit='c'),
+                Perfdata(f'{prefix}writes', data['writes'], unit='c'),
+                Perfdata(f'{prefix}reads64', data['reads64'], unit='c'),
+                Perfdata(f'{prefix}writes64', data['writes64'], unit='c'),
+            ]
+
+            if None is self.__warning:
+                perfdata += [
+                    Perfdata("load", data['load']),
+                    Perfdata("load1", data['load1']),
+                    Perfdata("load5", data['load5']),
                 ]
-            )
+            else:
+                perfdata += [
+                    Perfdata("load", data['load'], warning=self.__warning[0], critical=self.__critical[0]),
+                    Perfdata("load1", data['load1'], warning=self.__warning[0], critical=self.__critical[0]),
+                    Perfdata("load5", data['load5'], warning=self.__warning[0], critical=self.__critical[0]),
+                ]
+
+            output = Output(f"Disk load \"{data['device']}\"", perfdata)
 
             if None is self.__warning:
                 self.__status_builder.success(output)
