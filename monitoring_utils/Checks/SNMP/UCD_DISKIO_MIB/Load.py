@@ -84,7 +84,10 @@ class Load(Plugin):
                 self.__status_builder.exit()
             self.__warning = [float(warning[0]), float(warning[1]), float(warning[2])]
         else:
-            self.__warning = [None, None, None]
+            if args.critical is not None:
+                self.__status_builder.unknown(
+                    Output('If you set a critical value, you have to set a warning value too.'))
+                self.__status_builder.exit()
 
         critical = args.critical
         if None is not critical:
@@ -95,7 +98,10 @@ class Load(Plugin):
                 self.__status_builder.exit()
             self.__critical = [float(critical[0]), float(critical[1]), float(critical[2])]
         else:
-            self.__critical = [None, None, None]
+            if args.warning is not None:
+                self.__status_builder.unknown(
+                    Output('If you set a warning value, you have to set a critical value too.'))
+                self.__status_builder.exit()
 
     def run(self):
         oids = self.__snmp_executor.run()

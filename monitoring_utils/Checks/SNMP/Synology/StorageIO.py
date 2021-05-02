@@ -124,7 +124,7 @@ class StorageIO(Plugin):
             status_data[id] = data
 
         if 0 == len(status_data):
-            self.__status_builder.unknown(Output(f'Disk "{self.__volume_id}" either does not exist or not accessible'))
+            self.__status_builder.unknown(Output(f'Disk "{self.__disk_id}" either does not exist or not accessible'))
             self.__status_builder.exit()
 
         for status_data_id in status_data:
