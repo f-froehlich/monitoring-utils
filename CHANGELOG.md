@@ -36,3 +36,34 @@ Changelog
 # 2.1.0
 * Checks added:
     * DS18B20
+
+# 2.2.0
+* SNMP Checks added:
+    * UPS
+        * Bad battery packs
+        * Battery capacity
+        * Battery packs attached
+        * Remaining runtime
+        * Battery replacement needed
+        * Battery status
+        * Battery temperature
+        * Diagnostic test result
+        * Last diagnostic test result time
+    * Synology
+        * CPU-fan status
+        * Disk temperature
+        * GPU info
+        * Power status
+        * RAID status
+        * Service running
+        * Service used
+        * SMART
+        * Space IO
+        * Storage IO
+        * System status
+        * Temperature
+        * Upgrade
+    * Disk load
+    * CPU Load
+    * Memory Load
+        
