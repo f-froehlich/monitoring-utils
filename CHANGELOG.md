@@ -38,6 +38,10 @@ Changelog
     * DS18B20
 
 # 2.2.0
+* Checks modified:
+    * check reboot required now has an option to succeed if reboot is scheduled
+* Webserver checks added:
+    * check apache proxy requests
 * SNMP Checks added:
     * UPS
         * Bad battery packs
