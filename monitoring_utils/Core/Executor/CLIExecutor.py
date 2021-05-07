@@ -28,6 +28,7 @@
 
 
 import subprocess
+from typing import List, Union
 
 
 class CLIExecutor:
@@ -38,7 +39,43 @@ class CLIExecutor:
         self.__status_builder = status_builder
         self.__logger = logger
 
-    def run(self):
+    def check_command_exists(self):
+        if 2 <= len(self.__command_array):
+            if 'sudo' == self.__command_array[0]:
+                if None is self.__which(self.__command_array[1]):
+                    self.__status_builder.unknown(f'Command {self.__command_array[1]}" does not exist')
+                    self.__status_builder.exit()
+            else:
+                if None is self.__which(self.__command_array[0]):
+                    self.__status_builder.unknown(f'Command {self.__command_array[0]}" does not exist')
+                    self.__status_builder.exit()
+        elif 1 <= len(self.__command_array):
+            if None is self.__which(self.__command_array[0]):
+                self.__status_builder.unknown(f'Command {self.__command_array[0]}" does not exist')
+                self.__status_builder.exit()
+        else:
+            self.__status_builder.unknown(f'There is no command to execute')
+            self.__status_builder.exit()
+
+    def __which(self, command_name: str) -> Union[str, None]:
+        self.__logger.debug('Run command "which ' + command_name + '" on host.')
+
+        out = subprocess.Popen(['which', command_name],
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+        stdout, stderr = out.communicate()
+        self.__logger.debug('Command exit with exit code: ' + str(out.returncode))
+
+        stdout = stdout.decode("utf-8")
+        stderr = stderr.decode("utf-8")
+        self.__logger.debug('stdout: "' + stdout + '"')
+        self.__logger.debug('stderr: "' + stderr + '"')
+        if 0 != out.returncode:
+            return None
+        return stdout.split("\n")[0].strip()
+
+    def run(self) -> List[str]:
+        self.check_command_exists()
 
         command = ' '.join(self.__command_array)
         self.__logger.debug('Run command "' + command + '" on host.')
