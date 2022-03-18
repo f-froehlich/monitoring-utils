@@ -42,7 +42,17 @@ class CLIExecutor:
     def check_command_exists(self):
         if 2 <= len(self.__command_array):
             if 'sudo' == self.__command_array[0]:
-                if None is self.__which(self.__command_array[1]):
+                cmd = None
+                for arg in self.__command_array[1:]:
+                    if not arg.startswith('-'):
+                        cmd = arg
+                if None is cmd:
+                    self.__status_builder.unknown(
+                        f'Sudo command "{" ".join(self.__command_array)}" does not contain a program call'
+                    )
+                    self.__status_builder.exit()
+
+                if None is self.__which(cmd):
                     self.__status_builder.unknown(f'Command {self.__command_array[1]}" does not exist')
                     self.__status_builder.exit()
             else:
