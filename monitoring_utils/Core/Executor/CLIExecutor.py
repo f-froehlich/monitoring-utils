@@ -46,6 +46,7 @@ class CLIExecutor:
                 for arg in self.__command_array[1:]:
                     if not arg.startswith('-'):
                         cmd = arg
+                        break
                 if None is cmd:
                     self.__status_builder.unknown(
                         f'Sudo command "{" ".join(self.__command_array)}" does not contain a program call'
