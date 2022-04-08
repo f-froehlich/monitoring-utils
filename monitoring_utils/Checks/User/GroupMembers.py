@@ -96,9 +96,9 @@ class GroupMembers(Plugin):
             config = line.split(":")
 
             if 4 == len(config):
-                self.__logger.debug('User "' + config[3].split(",")[0] + '" is in group "' + self.__group + '"')
+                self.__logger.debug('Users "' + config[3] + '" are in group "' + self.__group + '"')
                 parsed_config += config[3].split(",")
             else:
                 self.__logger.debug('Could not parse line')
 
-        return parsed_config
+        return [user for user in parsed_config if user != ""]
