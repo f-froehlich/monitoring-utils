@@ -94,6 +94,8 @@ class SNMPExecutor:
                 error = True
                 continue
 
+            if '= ""' in line:
+                continue
             splittet = line.split(' = ')
             splittet_type = splittet[1].split(':')
             if 2 > len(splittet_type):

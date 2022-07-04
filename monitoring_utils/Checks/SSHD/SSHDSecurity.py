@@ -124,7 +124,7 @@ class SSHDSecurity(Plugin):
 
     def get_running_config(self):
         cli_executor = CLIExecutor(logger=self.__logger, status_builder=self.__status_builder,
-                                   command_array=['sudo', '-n', 'sshd', '-T'])
+                                   command_array=['sudo', 'sshd', '-T'])
 
         output = cli_executor.run()
 

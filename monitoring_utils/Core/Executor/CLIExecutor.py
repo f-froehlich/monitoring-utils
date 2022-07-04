@@ -43,15 +43,15 @@ class CLIExecutor:
         if 2 <= len(self.__command_array):
             if 'sudo' == self.__command_array[0]:
                 if None is self.__which(self.__command_array[1]):
-                    self.__status_builder.unknown(f'Command {self.__command_array[1]}" does not exist')
+                    self.__status_builder.unknown(f'Command "{self.__command_array[1]}" does not exist')
                     self.__status_builder.exit()
             else:
                 if None is self.__which(self.__command_array[0]):
-                    self.__status_builder.unknown(f'Command {self.__command_array[0]}" does not exist')
+                    self.__status_builder.unknown(f'Command "{self.__command_array[0]}" does not exist')
                     self.__status_builder.exit()
         elif 1 <= len(self.__command_array):
             if None is self.__which(self.__command_array[0]):
-                self.__status_builder.unknown(f'Command {self.__command_array[0]}" does not exist')
+                self.__status_builder.unknown(f'Command "sudo su{self.__command_array[0]}" does not exist')
                 self.__status_builder.exit()
         else:
             self.__status_builder.unknown(f'There is no command to execute')

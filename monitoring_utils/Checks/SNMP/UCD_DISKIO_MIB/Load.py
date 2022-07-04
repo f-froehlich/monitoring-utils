@@ -155,15 +155,15 @@ class Load(Plugin):
 
             if None is self.__warning:
                 perfdata += [
-                    Perfdata("load", data['load']),
                     Perfdata("load1", data['load1']),
                     Perfdata("load5", data['load5']),
+                    Perfdata("load15", data['load15']),
                 ]
             else:
                 perfdata += [
-                    Perfdata("load", data['load'], warning=self.__warning[0], critical=self.__critical[0]),
                     Perfdata("load1", data['load1'], warning=self.__warning[0], critical=self.__critical[0]),
                     Perfdata("load5", data['load5'], warning=self.__warning[0], critical=self.__critical[0]),
+                    Perfdata("load15", data['load15'], warning=self.__warning[0], critical=self.__critical[0]),
                 ]
 
             output = Output(f"Disk load \"{data['device']}\"", perfdata)

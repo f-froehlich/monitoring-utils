@@ -46,7 +46,7 @@ additional_files = [
 
 setup_args = dict(
     name='monitoring_utils',
-    version='2.2.0',
+    version='2.2.0-3',
     description='Utilities for monitoring scripts, plugins and other',
     long_description_content_type="text/markdown",
     long_description=README + '\n\n\n' + CONTRIBUTORS + '\n\n\n' + CHANGELOG,

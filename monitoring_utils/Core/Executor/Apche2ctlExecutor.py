@@ -31,7 +31,7 @@ from monitoring_utils.Core.Executor.CLIExecutor import CLIExecutor
 from monitoring_utils.Core.Outputs.Output import Output
 
 
-class ApachectlExecutor:
+class Apache2ctlExecutor:
 
     def __init__(self, logger, status_builder):
 
@@ -41,7 +41,7 @@ class ApachectlExecutor:
     def list_enabled_mods(self) -> List[Dict[str, str]]:
         self.__logger.info('List enabled modules')
 
-        unparsed_modules = CLIExecutor(self.__logger, self.__status_builder, ['sudo', 'apachectl', '-M']).run()
+        unparsed_modules = CLIExecutor(self.__logger, self.__status_builder, ['sudo', 'apache2ctl', '-M']).run()
         parsed_modules = []
         is_module = False
         for line in unparsed_modules:
@@ -82,7 +82,7 @@ class ApachectlExecutor:
     def get_running_config(self) -> List:
         self.require_module("info")
         unparsed_config = CLIExecutor(self.__logger, self.__status_builder,
-                                      ['sudo', 'apachectl', '-DDUMP_CONFIG']).run()
+                                      ['sudo', 'apache2ctl', '-DDUMP_CONFIG']).run()
 
         parsed_config = {}
         current_file = None

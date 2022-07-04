@@ -25,7 +25,7 @@
 #
 #  Checkout this project on github <https://github.com/f-froehlich/monitoring-utils>
 #  and also my other projects <https://github.com/f-froehlich>
-from monitoring_utils.Core.Executor.Apche2ctlExecutor import Apache2ctlExecutor
+from monitoring_utils.Core.Executor.ApchectlExecutor import ApachectlExecutor
 from monitoring_utils.Core.Outputs.Output import Output
 from monitoring_utils.Core.Plugin.Plugin import Plugin
 
@@ -50,7 +50,7 @@ class ProxyRequests(Plugin):
 
     def configure(self, args):
         self.__allow = args.allow
-        self.__apachectl_executor = Apache2ctlExecutor(self.__logger, self.__status_builder)
+        self.__apachectl_executor = ApachectlExecutor(self.__logger, self.__status_builder)
 
     def run(self):
         running_config = self.__apachectl_executor.get_running_config()
