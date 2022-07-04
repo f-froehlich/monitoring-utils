@@ -71,3 +71,6 @@ Changelog
     * CPU Load
     * Memory Load
         
+# 2.3.0
+* Add AWS SES Notification
+* Add template based sending for notification

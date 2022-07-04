@@ -56,6 +56,8 @@ class Notification:
         self.__type = None
         self.__notification_from = None
         self.__short = False
+        self.__message_template_short = ''
+        self.__message_template_additional = ''
 
         args = self.__parser.parse_args()
         self.__logger.configure(args)
@@ -83,6 +85,30 @@ class Notification:
         self.__parser.add_argument('-f', '--from', dest='notificationfrom', type=str, help='Custom from name')
         self.__parser.add_argument('--short', dest='short', action='store_true', help='Only send a short summary')
 
+        self.__parser.add_argument('--message-template-short', dest='message_template_short', type=str,
+                                   help='Message template for required arguments',
+                                   default=self.get_default_template_short())
+        self.__parser.add_argument('--message-template-additional', dest='message_template_additional', type=str,
+                                   help='Message template for additional information',
+                                   default=self.get_default_template_additional()
+                                   )
+
+    def get_default_template_short(self):
+        return """***** {displayname} is {state} *****<br />
+Host:    {displayname} ({hostname})<br />
+When:   {date}<br />
+<br />
+Info:    {output}<br />
+"""
+
+    def get_default_template_additional(self):
+        return """IPv4:    {ipv4}<br />
+IPv6:   {ipv6}<br />
+Comment:   {comment}<br />
+URL:   {url}<br />
+From:   {notefrom}<br />
+"""
+
     def configure(self, args):
         self.__date = args.date
         self.__hostname = args.hostname
@@ -97,6 +123,8 @@ class Notification:
         self.__type = args.type
         self.__notification_from = args.notificationfrom
         self.__short = args.short
+        self.__message_template_short = args.message_template_short
+        self.__message_template_additional = args.message_template_additional
 
     def run(self):
         self.__status_builder.critical('Plugin have to override run method')
@@ -141,17 +169,15 @@ class Notification:
     def get_hostname(self):
         return self.__hostname
 
+    def get_notification_from(self):
+        return self.__notification_from
+
     def get_display_name(self):
         return self.__display_name
 
     def get_message(self):
         self.__logger.info('Create host message')
-        message = """***** {displayname} is {state} *****
-Host:    {hostname}
-When:   {date}
-
-Info:    {output}
-""".format(
+        message = self.get_default_template_short().format(
             displayname=self.__display_name,
             state=self.__state,
             output=self.__output,
@@ -165,23 +191,11 @@ Info:    {output}
         return message + self.get_optional_messagedata()
 
     def get_optional_messagedata(self):
-        message = ''
         self.__logger.info('Add additional information')
 
-        if None != self.__hostaddress:
-            self.__logger.debug('Add IPv4')
-            message += 'IPv4:    {ipv4}\n'.format(ipv4=self.__hostaddress)
-        if None != self.__hostaddress6:
-            self.__logger.debug('Add IPv6')
-            message += 'IPv6:    {ipv6}\n'.format(ipv6=self.__hostaddress6)
-        if None != self.__comment:
-            self.__logger.debug('Add Comment')
-            message += 'Comment:    {comment}\n'.format(comment=self.__comment)
-        if None != self.__url:
-            self.__logger.debug('Add url')
-            message += 'URL:    {url}\n'.format(url=self.__url)
-        if None != self.__notification_from:
-            self.__logger.debug('Add from')
-            message += 'From:    {notefrom}\n'.format(notefrom=self.__notification_from)
-
-        return message
+        return self.__message_template_additional.format(
+            ipv4=self.__hostaddress,
+            ipv6=self.__hostaddress6,
+            comment=self.__comment,
+            url=self.__url,
+            notefrom=self.__notification_from)

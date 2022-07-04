@@ -57,3 +57,9 @@ class Logger:
 
     def debug(self, message):
         logging.debug(message)
+
+    def error(self, message):
+        logging.error(message)
+
+    def critical(self, message):
+        logging.critical(message)
