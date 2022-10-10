@@ -37,7 +37,7 @@ from monitoring_utils.Core.StatusBuilder import StatusBuilder
 class Plugin:
 
     def __init__(self, description):
-        self.__parser = argparse.ArgumentParser(description=description)
+        self.__parser = argparse.ArgumentParser(description=description, conflict_handler='resolve')
         self.__logger = Logger(self.__parser)
         self.__status_builder = StatusBuilder(self.__logger)
         self.__signals = Signals(self.__parser, self.__logger, self.__status_builder)

@@ -67,8 +67,8 @@ class WebExecutor:
         self.__client_key = args.clientkey
         self.__clinet_cert = args.clientcert
 
-    def run(self):
-        self.__logger.info('Make a web request')
+    def __parse_config(self):
+        self.__logger.info('Parse config')
         proto = 'https' if self.__ssl else 'http'
         self.__logger.debug('Setup protocol to ' + proto)
         default_port = 443 if self.__ssl else 80
@@ -79,8 +79,25 @@ class WebExecutor:
         cert = self.get_client_cert_config()
 
         url = proto + '://' + self.__domain + ':' + str(port) + self.__uri
-        self.__logger.debug('Make request to "' + url + '"')
+
+        return url, headers, cert
+
+    def run(self):
+        return self.run_get()
+
+    def run_get(self):
+        url, headers, cert = self.__parse_config()
+
+        self.__logger.info('Make GET request to "' + url + '"')
         r = requests.get(url, headers=headers, cert=cert)
+        r.encoding = 'utf-8'
+        return r.text
+
+    def run_post(self, data=None, json=None):
+        url, headers, cert = self.__parse_config()
+
+        self.__logger.info('Make POST request to "' + url + '"')
+        r = requests.post(url, headers=headers, cert=cert, data=data, json=json, timeout=60)
         r.encoding = 'utf-8'
         return r.text
 
