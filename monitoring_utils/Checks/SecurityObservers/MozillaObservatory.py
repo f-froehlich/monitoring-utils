@@ -239,12 +239,12 @@ See Details on: https://infosec.mozilla.org/guidelines/web_security#{test.get_na
                 f'Score of scan is lower than critical score. Expected higher than {self.__criticalscore} got {scan.get_score()}')
             self.__status_builder.critical(
                 f'Score of scan is lower than critical score. Expected higher than {self.__criticalscore} got {scan.get_score()}')
-        elif self.map_grade(scan.get_grade()) <= self.map_grade(self.__criticalgrade):
+        elif self.map_grade(scan.get_grade()) >= self.map_grade(self.__criticalgrade):
             self.__logger.info(
                 f'Grade of scan is lower than critical grade. Expected higher than {self.__criticalgrade} got {scan.get_grade()}')
             self.__status_builder.critical(
                 f'Grade of scan is lower than critical grade. Expected higher than {self.__criticalgrade} got {scan.get_grade()}')
-        elif scan.get_score() <= self.__warningscore:
+        elif scan.get_score() >= self.__warningscore:
             self.__logger.info(
                 f'Score of scan is lower than warning score. Expected higher than {self.__warningscore} got {scan.get_score()}')
             self.__status_builder.warning(
