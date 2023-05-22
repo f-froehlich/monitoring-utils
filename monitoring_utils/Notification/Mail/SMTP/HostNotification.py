@@ -26,30 +26,29 @@
 #  Checkout this project on github <https://github.com/f-froehlich/monitoring-utils>
 #  and also my other projects <https://github.com/f-froehlich>
 
-from monitoring_utils.Core.Executor.AWSSESExecutor import AWSSESExecutor
-from monitoring_utils.Core.Notification.MailServiceNotification import \
-    MailServiceNotification as BaseMailServiceNotification
+from monitoring_utils.Core.Executor.SMTPExecutor import SMTPExecutor
+from monitoring_utils.Core.Notification.MailHostNotification import MailHostNotification
 
-class ServiceNotification(BaseMailServiceNotification):
+
+class HostNotification(MailHostNotification):
 
     def __init__(self):
-        self.__aws_executor = None
-        BaseMailServiceNotification.__init__(self, 'Send a service-notification via AWS SES API')
+        self.__smtp_executor = None
+        MailHostNotification.__init__(self, 'Send a host-notification via SMTP SES API')
 
     def add_args(self):
-        BaseMailServiceNotification.add_args(self)
+        MailHostNotification.add_args(self)
         self.__parser = self.get_parser()
         self.__logger = self.get_logger()
         self.__status_builder = self.get_status_builder()
-        self.__aws_executor = AWSSESExecutor(logger=self.__logger, parser=self.__parser,
-                                             status_builder=self.__status_builder)
-        self.__aws_executor.add_args()
-
+        self.__smtp_executor = SMTPExecutor(logger=self.__logger, parser=self.__parser,
+                                            status_builder=self.__status_builder)
+        self.__smtp_executor.add_args()
 
     def configure(self, args):
-        BaseMailServiceNotification.configure(self, args)
-        self.__aws_executor.configure(args)
+        MailHostNotification.configure(self, args)
+        self.__smtp_executor.configure(args)
 
     def run(self):
-        self.__aws_executor.send(self.get_subject(), self.get_message())
-        self.__status_builder.success('Send service notification successful')
+        self.__smtp_executor.send(self.get_subject(), self.get_message())
+        self.__status_builder.success('Send host notification successful')

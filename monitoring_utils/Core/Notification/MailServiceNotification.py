@@ -26,30 +26,39 @@
 #  Checkout this project on github <https://github.com/f-froehlich/monitoring-utils>
 #  and also my other projects <https://github.com/f-froehlich>
 
-from monitoring_utils.Core.Executor.AWSSESExecutor import AWSSESExecutor
-from monitoring_utils.Core.Notification.MailHostNotification import MailHostNotification
+from monitoring_utils.Core.Notification.ServiceNotification import ServiceNotification as BaseServiceNotification
 
 
-class HostNotification(MailHostNotification):
+class MailServiceNotification(BaseServiceNotification):
 
-    def __init__(self):
-        self.__aws_executor = None
-        MailHostNotification.__init__(self, 'Send a host-notification via AWS SES API')
+    def __init__(self, description: str):
+        self.__smtp_executor = None
+        BaseServiceNotification.__init__(self, description)
+        self.__subject = None
 
     def add_args(self):
-        MailHostNotification.add_args(self)
+        BaseServiceNotification.add_args(self)
         self.__parser = self.get_parser()
-        self.__logger = self.get_logger()
-        self.__status_builder = self.get_status_builder()
-        self.__aws_executor = AWSSESExecutor(logger=self.__logger, parser=self.__parser,
-                                             status_builder=self.__status_builder)
-        self.__aws_executor.add_args()
 
+        self.__parser.add_argument('--subject', dest='subject', type=str, help='Subject template',
+                                   default='{servicedisplayname} is {state} on host {displayname}')
 
     def configure(self, args):
-        MailHostNotification.configure(self, args)
-        self.__aws_executor.configure(args)
+        BaseServiceNotification.configure(self, args)
+        self.__subject = args.subject
 
-    def run(self):
-        self.__aws_executor.send(self.get_subject(), self.get_message())
-        self.__status_builder.success('Send host notification successful')
+    def get_subject(self):
+        return self.__subject.format(
+            displayname=self.get_display_name(),
+            state=self.get_state(),
+            output=self.get_output(),
+            hostname=self.get_hostname(),
+            date=self.get_date(),
+            ipv4=self.get_hostaddress(),
+            ipv6=self.get_hostaddress6(),
+            comment=self.get_comment(),
+            url=self.get_url(),
+            notefrom=self.get_notification_from(),
+            servicedisplayname=self.get_service_display_name(),
+            servicename=self.get_service_name(),
+        )
