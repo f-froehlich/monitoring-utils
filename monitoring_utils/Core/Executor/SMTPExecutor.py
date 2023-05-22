@@ -28,7 +28,8 @@
 
 from email.message import EmailMessage
 from smtplib import SMTP_SSL, SMTP
-
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 class SMTPExecutor:
 
@@ -86,12 +87,13 @@ class SMTPExecutor:
         self.__logger.info('Sending message:\n Subject: ' + subject + '\n body: ' + message)
         for recipient in self.__recipients:
             # Craft the email using email.message.EmailMessage
-            email_message = EmailMessage()
+            email_message = MIMEMultipart()
             email_message.add_header('To', ', '.join(self.__recipients))
             email_message.add_header('From', self.__sender)
             email_message.add_header('Subject', subject)
             email_message.add_header('X-Priority', '1')  # Urgency, 1 highest, 5 lowest
-            email_message.set_content(message)
+            html_part = MIMEText(message, 'html')
+            email_message.attach(html_part)
 
             if self.__use_ssl:
                 # Connect, authenticate, and send mail
