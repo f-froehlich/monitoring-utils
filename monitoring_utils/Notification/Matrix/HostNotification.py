@@ -41,15 +41,16 @@ class HostNotification(HttpPostHostNotification):
         self.__parser = self.get_parser()
         self.__logger = self.get_logger()
         self.__status_builder = self.get_status_builder()
-        self.__parser.add_argument('-U', '--user', dest='user', type=str, required=True,
+        self.__parser.add_argument('-U', '--user', dest='user', type=str, required=True, action='append', default=[],
                                    help='Username to send to')
 
     def configure(self, args):
         HttpPostHostNotification.configure(self, args)
         self.__user = args.user
 
-    def get_data(self) -> dict:
-        data = HttpPostHostNotification.get_data(self)
-        data["user"] = self.__user
-
-        return data
+    def run(self):
+        data = self.get_data()
+        for user in self.__user:
+            data["user"] = user
+            self.__web_executor.run_post(json=data)
+            self.__status_builder.success(f'Send host notification to user {user} successful')
