@@ -73,7 +73,7 @@ class Notification:
                                    help='Host display name')
         self.__parser.add_argument('-o', '--output', dest='output', type=str, required=True,
                                    help='Output of service')
-        self.__parser.add_argument('-S', '--state', dest='state', type=str, required=True,
+        self.__parser.add_argument('-a', '--state', dest='state', type=str, required=True,
                                    help='State of service')
         self.__parser.add_argument('-t', '--type', dest='type', type=str, required=True, help='Type of Notification')
 
