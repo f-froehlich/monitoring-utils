@@ -67,13 +67,13 @@ class Notification:
         self.__status_builder.exit()
 
     def add_args(self):
-        self.__parser.add_argument('-d', '--date', dest='date', type=str, required=True, help='Date of notification')
+        self.__parser.add_argument('-D', '--date', dest='date', type=str, required=True, help='Date of notification')
         self.__parser.add_argument('-l', '--hostname', dest='hostname', type=str, required=True, help='Hostname')
         self.__parser.add_argument('-n', '--display-name', dest='displayname', type=str, required=True,
                                    help='Host display name')
         self.__parser.add_argument('-o', '--output', dest='output', type=str, required=True,
                                    help='Output of service')
-        self.__parser.add_argument('-s', '--state', dest='state', type=str, required=True,
+        self.__parser.add_argument('-S', '--state', dest='state', type=str, required=True,
                                    help='State of service')
         self.__parser.add_argument('-t', '--type', dest='type', type=str, required=True, help='Type of Notification')
 
@@ -199,3 +199,18 @@ From:   {notefrom}<br />
             comment=self.__comment,
             url=self.__url,
             notefrom=self.__notification_from)
+
+    def get_data(self) -> dict:
+        return {
+            "displayname": self.__display_name,
+            "state": self.__state,
+            "output": self.__output,
+            "hostname": self.__hostname,
+            "date": self.__date,
+            "ipv4": self.__hostaddress,
+            "ipv6": self.__hostaddress6,
+            "comment": self.__comment,
+            "url": self.__url,
+            "notefrom": self.__notification_from,
+            "formatted_message": self.get_message()
+        }

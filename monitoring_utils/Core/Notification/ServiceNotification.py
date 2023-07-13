@@ -42,7 +42,7 @@ class ServiceNotification(Notification):
         self.__parser = self.get_parser()
         self.__parser.add_argument('-e', '--servicename', dest='servicename', type=str, required=True,
                                    help='Name of service')
-        self.__parser.add_argument('-u', '--servicedisplayname', dest='servicedisplayname', type=str, required=True,
+        self.__parser.add_argument('-E', '--servicedisplayname', dest='servicedisplayname', type=str, required=True,
                                    help='Displayname of service')
 
     def get_default_template_short(self):
@@ -81,3 +81,11 @@ Info:    {output}<br />
             return message
 
         return message + self.get_optional_messagedata()
+
+    def get_data(self) -> dict:
+        data = Notification.get_data(self)
+        data["servicedisplayname"] = self.__servicedisplayname
+        data["servicename"] = self.__servicename
+        data["formatted_message"] = self.get_message()
+
+        return data
