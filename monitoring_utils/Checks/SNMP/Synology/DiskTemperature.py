@@ -75,7 +75,11 @@ class DiskTemperature(Plugin):
     def run(self):
         oids = self.__snmp_executor.run()
 
-        if len(oids) != self.__num_disks * 6:
+        disk_oid_factor = 0 # default < DSM 7.0
+        for oid in oids:
+            disk_oid_factor = max(disk_oid_factor, int(oid['oid'].split('.')[0]))
+
+        if len(oids) != self.__num_disks * disk_oid_factor:
             self.__status_builder.unknown(Output(
                 'You try to check "{disks}" but there are "{configured}" disks in your system.'.format(
                     disks=self.__num_disks, configured=int(len(oids) / 6))))
@@ -103,7 +107,24 @@ class DiskTemperature(Plugin):
             elif '6' == base[0]:
                 disks[disk_id]['temperature'] = oid['value']
 
-            # TODO there are more information available in DSM 7.0+
+            if disk_oid_factor >= 6:
+                if '7' == base[0]:
+                    disks[disk_id]['diskRole'] = oid['value']
+                elif '8' == base[0]:
+                    disks[disk_id]['diskRetry'] = oid['value']
+                elif '9' == base[0]:
+                    disks[disk_id]['diskBadSector'] = oid['value']
+                elif '10' == base[0]:
+                    disks[disk_id]['diskIdentifyFail'] = oid['value']
+                elif '11' == base[0]:
+                    disks[disk_id]['diskRemainLife'] = oid['value']
+                elif '12' == base[0]:
+                    disks[disk_id]['diskRemainLife'] = oid['value']
+
+            if disk_oid_factor >= 13:
+                if '13' == base[0]:
+                    disks[disk_id]['diskHealthStatus'] = oid['value']
+
 
         for disk in disks:
             if self.__critical <= disk['temperature']:
