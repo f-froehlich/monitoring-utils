@@ -90,10 +90,14 @@ class RAIDStatus(Plugin):
     def run(self):
         oids = self.__snmp_executor.run()
 
-        if len(oids) != self.__num_raids * 5:
+        disk_oid_factor = 0
+        for oid in oids:
+            disk_oid_factor = max(disk_oid_factor, int(oid['oid'].split('.')[0]))
+
+        if len(oids) != self.__num_raids * disk_oid_factor:
             self.__status_builder.unknown(Output(
                 'You try to check "{disks}" RAIDs but there are "{configured}" RAIDs in your system.'.format(
-                    disks=self.__num_raids, configured=int(len(oids) / 5))))
+                    disks=self.__num_raids, configured=int(len(oids) / disk_oid_factor))))
             self.__status_builder.exit()
 
         raids = [{} for i in range(0, self.__num_raids)]
@@ -112,6 +116,8 @@ class RAIDStatus(Plugin):
                 raids[disk_id]['free'] = oid['value']
             elif '5' == base[0]:
                 raids[disk_id]['total'] = oid['value']
+            elif '6' == base[0]:
+                raids[disk_id]['hotSpareCount'] = oid['value']
 
         status = {
             1: 'Normal',
@@ -142,6 +148,7 @@ class RAIDStatus(Plugin):
         critical_states = [5, 10, 11, 12]
 
         for raid in raids:
+            is_volume = "Volume" in raid['name']
             usage = raid['total'] - raid['free']
             usage_percent = usage / raid['total'] * 100
 
@@ -150,18 +157,24 @@ class RAIDStatus(Plugin):
                          critical=self.__critical / 100 * raid['total'], min=0, max=raid['total']),
             ]
 
-            output = Output(raid['name'] + ' - ' + status[raid['status']] + ' (' + str(usage_percent) + ' % used - '
-                            + str(usage) + ' / ' + str(raid['total']) + ')', perfdata)
+            if "hotSpareCount" in raid:
+                output = Output(raid['name'] + ' - ' + status[raid['status']] + ' (' + str(usage_percent) + ' % used - '
+                                + str(usage) + ' / ' + str(raid['total']) + ') ' +
+                                ('Hot-Spare failed' if raid['hotSpareCount'] < 0
+                                 else 'Hot-Spare available ' + str(raid['hotSpareCount'])), perfdata)
+            else:
+                output = Output(raid['name'] + ' - ' + status[raid['status']] + ' (' + str(usage_percent) + ' % used - '
+                                + str(usage) + ' / ' + str(raid['total']) + ')', perfdata)
 
-            if self.__critical <= usage_percent:
+            if is_volume and self.__critical <= usage_percent:
                 self.__status_builder.critical(output)
-            elif self.__warning <= usage_percent:
-                if raid['status'] in critical_states:
+            elif is_volume and self.__warning <= usage_percent:
+                if raid['status'] in critical_states or raid.get("hotSpareCount", 0) < 0:
                     self.__status_builder.critical(output)
                 else:
                     self.__status_builder.warning(output)
             else:
-                if raid['status'] in critical_states:
+                if raid['status'] in critical_states or raid.get("hotSpareCount", 0) < 0:
                     self.__status_builder.critical(output)
                 elif raid['status'] in warning_states:
                     self.__status_builder.warning(output)

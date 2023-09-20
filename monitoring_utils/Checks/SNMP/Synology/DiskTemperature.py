@@ -82,7 +82,7 @@ class DiskTemperature(Plugin):
         if len(oids) != self.__num_disks * disk_oid_factor:
             self.__status_builder.unknown(Output(
                 'You try to check "{disks}" but there are "{configured}" disks in your system.'.format(
-                    disks=self.__num_disks, configured=int(len(oids) / 6))))
+                    disks=self.__num_disks, configured=int(len(oids) / disk_oid_factor))))
             self.__status_builder.exit()
 
         disks = [{} for i in range(0, self.__num_disks)]
