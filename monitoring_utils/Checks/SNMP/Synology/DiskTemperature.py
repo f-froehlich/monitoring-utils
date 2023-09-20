@@ -43,6 +43,7 @@ class DiskTemperature(Plugin):
         self.__num_disks = None
         self.__warning = None
         self.__critical = None
+        self.__spare = None
         self.__oid = '1.3.6.1.4.1.6574.2.1.1'
 
         Plugin.__init__(self, 'Check The temperature of the disks')
@@ -61,12 +62,15 @@ class DiskTemperature(Plugin):
                                    type=int, help='Warning temperature')
         self.__parser.add_argument('-c', '--critical', dest='critical', required=True,
                                    type=int, help='Critical temperature')
+        self.__parser.add_argument('--spare', dest='spare', type=int, required=False, action='append', default=[],
+                                   help='Id(s) of Hot-Spare Disk(s) (can be repeated)')
 
     def configure(self, args):
         self.__snmp_executor.configure(args)
         self.__num_disks = args.disks
         self.__warning = args.warning
         self.__critical = args.critical
+        self.__spare = args.spare
 
     def run(self):
         oids = self.__snmp_executor.run()
@@ -92,9 +96,14 @@ class DiskTemperature(Plugin):
             elif '4' == base[0]:
                 disks[disk_id]['type'] = oid['value']
             elif '5' == base[0]:
-                disks[disk_id]['status'] = oid['value']
+                if disk_id + 1 in self.__spare:
+                    disks[disk_id]['status'] = 0
+                else:
+                    disks[disk_id]['status'] = oid['value']
             elif '6' == base[0]:
                 disks[disk_id]['temperature'] = oid['value']
+
+            # TODO there are more information available in DSM 7.0+
 
         for disk in disks:
             if self.__critical <= disk['temperature']:
@@ -123,6 +132,7 @@ class DiskTemperature(Plugin):
     def __get_disk_description(self, disk):
 
         status = {
+            0: 'Not initialized (Hot Spare)',
             1: 'Normal',
             2: 'No data',
             3: 'Not initialized',
