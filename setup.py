@@ -63,6 +63,8 @@ setup_args = dict(
 )
 
 install_requires = [
+        'requests>=2.31.0',
+        'psutil>=5.9.7'
 ]
 
 if __name__ == '__main__':
