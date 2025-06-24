@@ -99,4 +99,3 @@ class RebootRequired(Plugin):
         self.__status_builder.success('No reboot is required.')
 
 
-RebootRequired()

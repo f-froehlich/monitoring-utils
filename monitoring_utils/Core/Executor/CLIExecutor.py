@@ -85,7 +85,7 @@ class CLIExecutor:
             return None
         return stdout.split("\n")[0].strip()
 
-    def run(self) -> List[str]:
+    def run(self, exit_on_failure=True, no_failure_message=False) -> List[str]:
         self.check_command_exists()
 
         command = ' '.join(self.__command_array)
@@ -104,13 +104,14 @@ class CLIExecutor:
         if 0 != out.returncode:
             if 'a password is required' in stderr:
                 self.__logger.debug('Can\'t run sudo without password')
-
-                self.__status_builder.unknown(
-                    'Can\'t run sudo without password. Please give executable rights without password in /ets/sudoers for sshd command. See our documentation for details.')
+                if not no_failure_message:
+                    self.__status_builder.unknown(
+                        'Can\'t run sudo without password. Please give executable rights without password in /ets/sudoers for sshd command. See our documentation for details.')
             else:
-                self.__status_builder.unknown(stderr)
-
-            self.__status_builder.exit()
+                if not no_failure_message:
+                    self.__status_builder.unknown(f"{stderr} {stdout}")
+            if exit_on_failure:
+                self.__status_builder.exit()
 
         if not self.__ignore_empty_lines:
             return stdout.split("\n")
